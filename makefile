@@ -10,7 +10,7 @@ LDLIBS = -L$(LIBDIR)/glfw/ -L$(LIBDIR)/glad/ -lglfw3 -lopengl32 -lgdi32
 
 all: $(BUILDDIR)/game
 
-$(BUILDDIR)/game: $(addprefix $(BUILDDIR)/, $(OBJ))
+$(BUILDDIR)/game: $(addprefix $(BUILDDIR)/, $(OBJ)) $(LIBDIR)/glad/glad.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDLIBS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp

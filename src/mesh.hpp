@@ -5,9 +5,10 @@
 class Mesh
 {
     public:
-        Mesh(const float vertices[], unsigned int vertex_count);
+        Mesh(const float vertices[], size_t vertex_size, const unsigned int indicies[], size_t indicies_size);
         void bind();
+        unsigned int vertices_count, indices_count;
         ~Mesh();
     private:
-        unsigned int VAO, VBO, vertices_count;
+        unsigned int VAO, VBO, EBO;
 };

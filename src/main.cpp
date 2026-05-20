@@ -33,18 +33,23 @@ int main(int argc, char const *argv[])
     }    
     glViewport(0, 0, 800, 600);
 
-    float verticies[] = {
-        0.0f, 0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f
+    float vertices[] = {
+        0.5f,  0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 
+        -0.5f, 0.5f, 0.0f   
     };
+
+    unsigned int indicies[] = {
+        0, 1, 3,
+        1, 2, 3
+    };
+
     Object triangle(
-        (float[]){
-        0.0f, 0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f
-        },
-        3,
+        vertices,
+        indicies,
+        sizeof(vertices),
+        sizeof(indicies),
         "shaders/shader.vert",
         "shaders/shader.frag"
     );

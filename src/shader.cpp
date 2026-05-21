@@ -55,9 +55,17 @@ void Shader::use() const
     glUseProgram(shader_program);
 }
 
+void Shader::set_uniform_4f(float value[4], const char* uniform_name)
+{
+    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
+    use();  
+    glUniform4f(uniform_location, value[0], value[1], value[2], value[3]);
+}
+
 Shader::~Shader()
 {
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
     glDeleteProgram(shader_program);
 }
+

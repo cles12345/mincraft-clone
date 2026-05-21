@@ -4,7 +4,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <assert.h>
+#include <cassert>
+#include <cmath>
 #include "shader.hpp"
 #include "mesh.hpp"
 #include "object.hpp"
@@ -34,10 +35,10 @@ int main(int argc, char const *argv[])
     glViewport(0, 0, 800, 600);
 
     float vertices[] = {
-        0.5f,  0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f, 
-        -0.5f, 0.5f, 0.0f   
+        0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f
     };
 
     unsigned int indicies[] = {
@@ -45,21 +46,26 @@ int main(int argc, char const *argv[])
         1, 2, 3
     };
 
-    Object triangle(
+    Object rectangle(
         vertices,
         indicies,
         sizeof(vertices),
         sizeof(indicies),
+        6,
+        24,
         "shaders/shader.vert",
         "shaders/shader.frag"
     );
+
+    rectangle.mesh.set_layout(0, 3, FLOAT);
+    rectangle.mesh.set_layout(1, 3, FLOAT);
 
     while(!glfwWindowShouldClose(window))
     {
         glClearColor(0, 0, 0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        triangle.draw();
+        rectangle.draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();    

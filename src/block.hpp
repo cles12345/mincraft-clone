@@ -11,7 +11,6 @@
 class Block
 {
     public:
-        glm::vec3 pos;
         Texture texture;
 
         Block(const char* texture_path);

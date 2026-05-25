@@ -55,74 +55,25 @@ void Shader::use() const
     glUseProgram(shader_program);
 }
 
-void Shader::set_uniform(float value, const char* uniform_name)
+void Shader::set_uniform(float value1, float value2, const char* uniform_name)
 {
     unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
     glUseProgram(shader_program);
-    glUniform1f(uniform_location, value);
+    glUniform2f(uniform_location, value1, value2);
 }
 
-void Shader::set_uniform(float (&value)[2], const char* uniform_name)
+void Shader::set_uniform(float value1, float value2, float value3, const char* uniform_name)
 {
     unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
     glUseProgram(shader_program);
-    glUniform2f(uniform_location, value[0], value[1]);
+    glUniform3f(uniform_location, value1, value2, value3);
 }
 
-void Shader::set_uniform(float (&value)[3], const char* uniform_name)
+void Shader::set_uniform(float value1, float value2, float value3, float value4, const char* uniform_name)
 {
     unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
     glUseProgram(shader_program);
-    glUniform3f(uniform_location, value[0], value[1], value[2]);
-}
-
-void Shader::set_uniform(float (&value)[4], const char* uniform_name)
-{
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
-    glUniform4f(uniform_location, value[0], value[1], value[2], value[3]);
-}
-
-void Shader::set_uniform(unsigned int value, const char* uniform_name)
-{
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
-    glUniform1f(uniform_location, value);
-}
-
-void Shader::set_uniform(unsigned int (&value)[2], const char* uniform_name)
-{
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
-    glUniform2f(uniform_location, value[0], value[1]);
-}
-
-void Shader::set_uniform(unsigned int (&value)[3], const char* uniform_name)
-{
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
-    glUniform3f(uniform_location, value[0], value[1], value[3]);
-}
-
-void Shader::set_uniform(unsigned int (&value)[4], const char* uniform_name)
-{
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
-    glUniform4f(uniform_location, value[0], value[1], value[2], value[3]);
-}
-
-void Shader::set_uniform(const glm::mat2& value, const char* uniform_name)
-{
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
-    glUniformMatrix2fv(uniform_location, 1, GL_FALSE, glm::value_ptr(value));
-}
-
-void Shader::set_uniform(const glm::mat3& value, const char* uniform_name)
-{
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
-    glUniformMatrix3fv(uniform_location, 1, GL_FALSE, glm::value_ptr(value));
+    glUniform4f(uniform_location, value1, value2, value3, value4);
 }
 
 void Shader::set_uniform(const glm::mat4& value, const char* uniform_name)

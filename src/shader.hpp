@@ -20,16 +20,9 @@ class Shader
         
         Shader(const std::string& vertex_path, const std::string& fragment_path);
         void use() const;
-        void set_uniform(float value, const char* uniform_name);
-        void set_uniform(float (&value)[2], const char* uniform_name);
-        void set_uniform(float (&value)[3], const char* uniform_name);
-        void set_uniform(float (&value)[4], const char* uniform_name);
-        void set_uniform(unsigned int value, const char* uniform_name);
-        void set_uniform(unsigned int (&value)[2], const char* uniform_name);
-        void set_uniform(unsigned int (&value)[3], const char* uniform_name);
-        void set_uniform(unsigned int (&value)[4], const char* uniform_name);
-        void set_uniform(const glm::mat2& value, const char* uniform_name);
-        void set_uniform(const glm::mat3& value, const char* uniform_name);
+        void set_uniform(float value1, float value2, const char* uniform_name);
+        void set_uniform(float value1, float value2, float value3, const char* uniform_name);
+        void set_uniform(float value1, float value2, float value3, float value4, const char* uniform_name);
         void set_uniform(const glm::mat4& value, const char* uniform_name);
         ~Shader();
 };

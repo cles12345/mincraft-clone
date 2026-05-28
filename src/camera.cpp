@@ -1,12 +1,13 @@
 #include "camera.hpp"
 
-Camera::Camera() : yaw(-90.0f), pitch(0.0f), first_mouse(true)
+Camera::Camera() : yaw(-90.0f), pitch(0.0f), first_mouse(true), view(1.0f)
 {
     pos= glm::vec3(0.0f, 0.0f, 3.0f);  
     direction = glm::vec3(0, 0, -1);
     up = glm::vec3(0.0f, 1.0f, 0.0f);
     yaw = -90.0f;
     pitch = 0.0f;
+    projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 }
 
 void Camera::mouse_callback(double x, double y)
@@ -44,6 +45,13 @@ void Camera::mouse_callback(double x, double y)
 glm::mat4 Camera::get_view() 
 {
     return glm::lookAt(pos, pos + direction, up);
+}
+
+void Camera::update(Shader& shader)
+{
+    view = get_view();
+    shader.set_uniform(view, "view");
+    shader.set_uniform(projection, "projection");
 }
 
 void Camera::move_forward(float speed)

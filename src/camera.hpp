@@ -1,4 +1,5 @@
 #pragma once
+#include "shader.hpp"
 #include <glfw3.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -10,6 +11,9 @@ class Camera
         glm::vec3 pos;  
         glm::vec3 direction;
         glm::vec3 up; 
+        glm::mat4 view;
+        glm::mat4 projection;
+        
         float pitch;
         float yaw;
         bool first_mouse;
@@ -18,6 +22,7 @@ class Camera
         Camera();
         void mouse_callback(double x, double y);
         glm::mat4 get_view();
+        void update(Shader& shader);
         void move_forward(float speed);
         void move_backward(float speed);
         void move_right(float speed);

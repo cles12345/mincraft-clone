@@ -8,11 +8,22 @@
 #include "shader.hpp"
 #include "texture.hpp"
 
+struct BlockData
+{
+    Texture texture;
+    Material material;
+};
+
+enum BlockType
+{
+    GRASS_TYPE
+};
+
 class Block
 {
     public:
-        Texture texture;
+        BlockData data;
 
-        Block(const char* texture_path);
+        Block(BlockType type, Shader& shader);
         void draw(Shader& shader, Mesh& mesh, glm::vec3 pos);
 };

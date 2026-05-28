@@ -95,18 +95,14 @@ int main(int argc, char const *argv[])
     mesh.set_layout(1, 3, FLOAT);
     mesh.set_layout(2, 2, FLOAT);
 
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 projection = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-    
-    Block block("sprite/grass.jpeg");
+    Block block(GRASS_TYPE, shader);
     glm::vec3 pos(0.0f, -1.0f, -3.0f);
     Camera cam;
     glEnable(GL_DEPTH_TEST);
     float delta_time = 0.0f;
     float last_frame = glfwGetTime();
     float light_color[3] = {1.0f, 1.0f, 1.0f};
-    float light_pos[3] = {2.0f, -1.0f, -4.0f};
+    float light_pos[3] = {2.0f, 2.0f, -4.0f};
     while(!glfwWindowShouldClose(window))
     {
         glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
@@ -122,13 +118,11 @@ int main(int argc, char const *argv[])
 
         check_events(cam, window, delta_time);
         shader.use();
-        view = cam.get_view();
-        shader.set_uniform(view, "view");
-        shader.set_uniform(projection, "projection");
+        cam.update(shader);
         shader.set_uniform(light_color[0], light_color[1], light_color[2], "lightColor");
         shader.set_uniform(light_pos[0], light_pos[1], light_pos[2], "lightPos");
         shader.set_uniform(cam.pos[0], cam.pos[1], cam.pos[2], "viewPos");
-
+        
         block.draw(shader, mesh, pos);
 
         glfwSwapBuffers(window);

@@ -25,6 +25,7 @@ class Shader
         unsigned int fragment_shader;
         unsigned int shader_program;
         
+        Shader() = default;
         Shader(const std::string& vertex_path, const std::string& fragment_path);
         void use() const;
         void set_uniform(float value, const char* uniform_name);

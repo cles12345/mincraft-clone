@@ -7,7 +7,7 @@ Camera::Camera() : yaw(-90.0f), pitch(0.0f), first_mouse(true), view(1.0f)
     up = glm::vec3(0.0f, 1.0f, 0.0f);
     yaw = -90.0f;
     pitch = 0.0f;
-    projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, BLOCK_MIN, BLOCK_MAX);
 }
 
 void Camera::mouse_callback(double x, double y)

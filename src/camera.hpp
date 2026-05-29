@@ -5,6 +5,9 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 
+#define BLOCK_MAX 100.0f
+#define BLOCK_MIN 0.1f
+
 class Camera
 {
     public:
@@ -19,6 +22,7 @@ class Camera
         bool first_mouse;
         float last_x;
         float last_y;
+        
         Camera();
         void mouse_callback(double x, double y);
         glm::mat4 get_view();

@@ -16,6 +16,7 @@ struct BlockData
 
 enum BlockType
 {
+    NONE,
     GRASS_TYPE
 };
 
@@ -24,6 +25,7 @@ class Block
     public:
         BlockData data;
 
+        Block() = default;
         Block(BlockType type, Shader& shader);
         void draw(Shader& shader, Mesh& mesh, glm::vec3 pos);
 };

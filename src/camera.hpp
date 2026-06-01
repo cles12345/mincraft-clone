@@ -11,19 +11,18 @@
 class Camera
 {
     public:
-        glm::vec3 pos;  
-        glm::vec3 direction;
-        glm::vec3 up; 
-        glm::mat4 view;
-        glm::mat4 projection;
+        glm::vec3 pos = glm::vec3(0.0f, 0.0f, 3.0f);  
+        glm::vec3 direction = glm::vec3(0, 0, -1);
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, BLOCK_MIN, BLOCK_MAX);
         
-        float pitch;
-        float yaw;
-        bool first_mouse;
-        float last_x;
-        float last_y;
+        float pitch = 0.0f;
+        float yaw = -90.f;
+        bool first_mouse = true;
+        float last_x = 0;
+        float last_y = 0;
         
-        Camera();
         void mouse_callback(double x, double y);
         glm::mat4 get_view();
         void update(Shader& shader);

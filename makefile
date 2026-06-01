@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -g $(INCDIR)
+CXXFLAGS = -Wall -Werror -Og $(INCDIR)
 SRC = main.cpp shader.cpp utill.cpp mesh.cpp texture.cpp camera.cpp block.cpp chunk.cpp
 OBJ = $(SRC:.cpp=.o)
 SRCDIR = src

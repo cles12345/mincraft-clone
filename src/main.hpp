@@ -21,17 +21,17 @@ class Game
 {
     public:
         GLFWwindow* window = nullptr;
-        Mesh *mesh;
-        Shader *shader;
-        Shader *zshader;
-        Mesh *zmesh;
+        Mesh *mesh = nullptr;
+        Shader *shader = nullptr;
+        Shader *zshader = nullptr;
+        Mesh *zmesh = nullptr;
         Camera cam;
         float delta_time = 0;
         float last_frame = 0;
         std::vector<Block> blocks;
         std::vector<Chunk> chunks;
         std::vector<glm::vec3> block_pos;
-        const bool ZPREPASS = false;
+        const bool ZPREPASS = true;
 
         Game();
         void game_loop();

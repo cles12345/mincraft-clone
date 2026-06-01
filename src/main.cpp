@@ -7,7 +7,7 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-Game::Game() : mesh(), shader()
+Game::Game()
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -82,55 +82,60 @@ Game::Game() : mesh(), shader()
     mesh->set_layout(0, 3, FLOAT);
     mesh->set_layout(1, 3, FLOAT);
     mesh->set_layout(2, 2, FLOAT);   
-    
-    float zvertices[] = {
-        // Front face
-        -0.5f,  0.5f,  0.5f, 
-        -0.5f, -0.5f,  0.5f, 
-        0.5f, -0.5f,  0.5f,  
-        0.5f,  0.5f,  0.5f,  
 
-        // Back face 
-        0.5f,  0.5f, -0.5f,  
-        0.5f, -0.5f, -0.5f,  
-        -0.5f, -0.5f, -0.5f, 
-        -0.5f,  0.5f, -0.5f,  
+    if(ZPREPASS){
+        float zvertices[] = {
+            // Front face
+            -0.5f,  0.5f,  0.5f, 
+            -0.5f, -0.5f,  0.5f, 
+            0.5f, -0.5f,  0.5f,  
+            0.5f,  0.5f,  0.5f,  
 
-        // Left face 
-        -0.5f,  0.5f, -0.5f, 
-        -0.5f, -0.5f, -0.5f, 
-        -0.5f, -0.5f,  0.5f, 
-        -0.5f,  0.5f,  0.5f, 
+            // Back face 
+            0.5f,  0.5f, -0.5f,  
+            0.5f, -0.5f, -0.5f,  
+            -0.5f, -0.5f, -0.5f, 
+            -0.5f,  0.5f, -0.5f,  
 
-        // Right face
-        0.5f,  0.5f,  0.5f,  
-        0.5f, -0.5f,  0.5f,  
-        0.5f, -0.5f, -0.5f,  
-        0.5f,  0.5f, -0.5f,  
+            // Left face 
+            -0.5f,  0.5f, -0.5f, 
+            -0.5f, -0.5f, -0.5f, 
+            -0.5f, -0.5f,  0.5f, 
+            -0.5f,  0.5f,  0.5f, 
 
-        // Top face
-        -0.5f,  0.5f, -0.5f, 
-        -0.5f,  0.5f,  0.5f, 
-        0.5f,  0.5f,  0.5f,  
-        0.5f,  0.5f, -0.5f,  
+            // Right face
+            0.5f,  0.5f,  0.5f,  
+            0.5f, -0.5f,  0.5f,  
+            0.5f, -0.5f, -0.5f,  
+            0.5f,  0.5f, -0.5f,  
 
-        // Bottom face
-        -0.5f, -0.5f,  0.5f, 
-        -0.5f, -0.5f, -0.5f, 
-        0.5f, -0.5f, -0.5f,  
-        0.5f, -0.5f,  0.5f,  
-    };
-    zshader = new Shader("shaders/zshader.vert", "shaders/zshader.frag");
-    zmesh = new Mesh(zvertices, sizeof(zvertices), indices, sizeof(indices), 3, 12);
-    zmesh->set_layout(0, 3, FLOAT);
+            // Top face
+            -0.5f,  0.5f, -0.5f, 
+            -0.5f,  0.5f,  0.5f, 
+            0.5f,  0.5f,  0.5f,  
+            0.5f,  0.5f, -0.5f,  
 
+            // Bottom face
+            -0.5f, -0.5f,  0.5f, 
+            -0.5f, -0.5f, -0.5f, 
+            0.5f, -0.5f, -0.5f,  
+            0.5f, -0.5f,  0.5f,  
+        };
+        zshader = new Shader("shaders/zshader.vert", "shaders/zshader.frag");
+        zmesh = new Mesh(zvertices, sizeof(zvertices), indices, sizeof(indices), 3, 12);
+        zmesh->set_layout(0, 3, FLOAT);
+    }
     last_frame = glfwGetTime();
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);  
 
-    chunks.emplace_back();
+    for (size_t i = 0; i < 10; i++)
+    {
+        chunks.emplace_back();
+    }
 
-    for (auto& chunk : chunks)
+    for (size_t i = 0; i < chunks.size(); i++)
     {
         for (int x = 0; x < CHUNK_WIDTH; x++)
         {
@@ -138,10 +143,10 @@ Game::Game() : mesh(), shader()
             {
                 for (int z = 0; z < CHUNK_DEPTH; z++)
                 {
-                    if (chunk.data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT] != 0)
+                    if (chunks[i].data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT] != 0)
                     {
-                        blocks.emplace_back(chunk.data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT], *shader);
-                        block_pos.emplace_back(x, y, z);
+                        blocks.emplace_back(chunks[i].data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT], *shader);
+                        block_pos.emplace_back((x + (i % (chunks.size()/2)) * 10), y, z + ((i / (chunks.size()/2)) * 10));
                     }
                 }
             }
@@ -213,10 +218,10 @@ void Game::update()
     check_events();
     shader->use();
     cam.update(*shader);
-    cam.update(*zshader);   
+    if(ZPREPASS) cam.update(*zshader);   
 
     float light_color[3] = {1.0f, 1.0f, 1.0f};
-    float light_pos[3] = {10.0f, 20.0f, -10.0f};
+    float light_pos[3] = {0.0f, 20.0f, -3.0f};
 
     shader->set_uniform(light_color[0], light_color[1], light_color[2], "lightColor");
     shader->set_uniform(light_pos[0], light_pos[1], light_pos[2], "lightPos");
@@ -228,7 +233,7 @@ void Game::update()
         glColorMask(0, 0, 0, 0);
         zshader->use();
         zmesh->bind();
-        for (int i = 0; i < blocks.size(); i++)
+        for (size_t i = 0; i < blocks.size(); i++)
         {
             if (glm::distance(block_pos[i], cam.pos) < 100.0f)
             {
@@ -243,9 +248,9 @@ void Game::update()
         glColorMask(1, 1, 1, 1);
         shader->use();
         mesh->bind();
-        for (int i = 0; i < blocks.size(); i++)
+        for (size_t i = 0; i < blocks.size(); i++)
         {
-            if (glm::distance(block_pos[i], cam.pos) < 100.0f)
+            if (glm::distance(block_pos[i], cam.pos) < BLOCK_MAX || glm::distance(block_pos[i], cam.pos) > BLOCK_MIN)
             {
                 blocks[i].draw(*shader, *mesh, block_pos[i]);
             }
@@ -260,7 +265,7 @@ void Game::update()
         glColorMask(1, 1, 1, 1);
         shader->use();
         mesh->bind();
-        for (int i = 0; i < blocks.size(); i++)
+        for (size_t i = 0; i < blocks.size(); i++)
         {
             if (glm::distance(block_pos[i], cam.pos) < 100.0f)
             {
@@ -278,6 +283,8 @@ Game::~Game()
 {
     delete shader;
     delete mesh;
-    delete zshader;
-    delete zmesh;
+    if(ZPREPASS){
+        delete zshader;
+        delete zmesh;
+    }
 }

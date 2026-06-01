@@ -22,7 +22,8 @@ class Camera
         bool first_mouse = true;
         float last_x = 0;
         float last_y = 0;
-        
+
+        Camera(float fov, float width, float height);
         void mouse_callback(double x, double y);
         glm::mat4 get_view();
         void update(Shader& shader);

@@ -17,8 +17,11 @@ struct BlockData
 enum BlockType
 {
     NONE,
-    GRASS_TYPE
+    GRASS_TYPE,
+    STONE_TYPE
 };
+
+BlockData get_block_data(BlockType type);
 
 class Block
 {
@@ -26,6 +29,6 @@ class Block
         BlockData data;
 
         Block() = default;
-        Block(BlockType type, Shader& shader);
+        Block(BlockType type);
         void draw(Shader& shader, Mesh& mesh, glm::vec3 pos);
 };

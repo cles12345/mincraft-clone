@@ -9,7 +9,7 @@ Chunk::Chunk()
         {
             for(int z = 0; z < CHUNK_DEPTH; z++)
             {
-                data.push_back((BlockType)(rand() % 2));
+                data.push_back((BlockType)(rand() % 3));
             }
         }
     }

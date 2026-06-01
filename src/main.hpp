@@ -21,17 +21,20 @@ class Game
 {
     public:
         GLFWwindow* window = nullptr;
-        Mesh *mesh = nullptr;
+        Mesh *grass_mesh = nullptr;
+        Mesh *stone_mesh = nullptr;
         Shader *shader = nullptr;
         Shader *zshader = nullptr;
         Mesh *zmesh = nullptr;
         Camera cam;
         float delta_time = 0;
         float last_frame = 0;
-        std::vector<Block> blocks;
+        std::vector<Block> grass_blocks;
+        std::vector<Block> stone_blocks;
         std::vector<Chunk> chunks;
-        std::vector<glm::vec3> block_pos;
-        const bool ZPREPASS = true;
+        std::vector<glm::vec3> grass_block_pos;
+        std::vector<glm::vec3> stone_block_pos;
+        const bool ZPREPASS = false;
 
         Game();
         void game_loop();
@@ -40,5 +43,4 @@ class Game
         void calculate_delta_time();
         void calculate_camera_pos();
         void update();
-        ~Game();
 };

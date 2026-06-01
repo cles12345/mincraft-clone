@@ -1,5 +1,10 @@
 #include "camera.hpp"
 
+Camera::Camera(float fov, float width, float height)
+{
+    projection = glm::perspective(glm::radians(fov), width / height, BLOCK_MIN, BLOCK_MAX);
+}
+
 void Camera::mouse_callback(double x, double y)
 {
     if (first_mouse)

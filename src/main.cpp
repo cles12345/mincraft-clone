@@ -7,15 +7,16 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-Game::Game()
+Game::Game() : cam(45.0f, 800.0f, 600.0f)
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, false);
 
-    window = glfwCreateWindow(800, 600, "game", NULL, NULL);
-    
+    window = glfwCreateWindow(800.0f, 600.0f, "game", NULL, NULL);
+
     if (window == NULL)
     {
         std::cout << "Failed to create a window\n";
@@ -31,7 +32,7 @@ Game::Game()
     }    
     glViewport(0, 0, 800, 600);
 
-    float vertices[] = {
+    float grass_vertices[] = {
         // Front face
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  0.0f,   1.0f,
         -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  0.0f,   0.0f,
@@ -77,11 +78,53 @@ Game::Game()
         20, 21, 22, 20, 22, 23   // Bottom
     };
 
-    mesh = new Mesh(vertices, sizeof(vertices), indices, sizeof(indices), 8, 32);
+    grass_mesh = new Mesh(grass_vertices, sizeof(grass_vertices), indices, sizeof(indices), 8, 32);
     shader = new Shader("shaders/shader.vert", "shaders/shader.frag");
-    mesh->set_layout(0, 3, FLOAT);
-    mesh->set_layout(1, 3, FLOAT);
-    mesh->set_layout(2, 2, FLOAT);   
+    grass_mesh->set_layout(0, 3, FLOAT);
+    grass_mesh->set_layout(1, 3, FLOAT);
+    grass_mesh->set_layout(2, 2, FLOAT);   
+
+    float stone_vertices[] = {
+        // Front face
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  0.0f,   1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+
+        // Back face 
+        0.5f,  0.5f, -0.5f,  0.0f, 0.0f, -1.0f,  0.0f,   1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f,  0.0f,   0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, -1.0f,  1.0f, 1.0f,
+
+        // Left face 
+        -0.5f,  0.5f, -0.5f, -1.0f, 0.0f, 0.0f,  0.0f,   1.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,  0.0f,   0.0f,
+        -0.5f, -0.5f,  0.5f, -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+
+        // Right face
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  0.0f,   1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  0.0f,   0.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+
+        // Top face
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+
+        // Bottom face
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,  1.0f,   0.0f,
+        0.5f, -0.5f,  0.5f,  0.0f, -1.0f, 0.0f,  1.0f,   1.0f,
+    };
+    stone_mesh = new Mesh(stone_vertices, sizeof(stone_vertices), indices, sizeof(indices), 8, 32);
+    stone_mesh->set_layout(0, 3, FLOAT);
+    stone_mesh->set_layout(1, 3, FLOAT);
+    stone_mesh->set_layout(2, 2, FLOAT);   
 
     if(ZPREPASS){
         float zvertices[] = {
@@ -143,10 +186,15 @@ Game::Game()
             {
                 for (int z = 0; z < CHUNK_DEPTH; z++)
                 {
-                    if (chunks[i].data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT] != 0)
+                    if (chunks[i].data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT] == GRASS_TYPE)
                     {
-                        blocks.emplace_back(chunks[i].data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT], *shader);
-                        block_pos.emplace_back((x + (i % (chunks.size()/2)) * 10), y, z + ((i / (chunks.size()/2)) * 10));
+                        grass_blocks.emplace_back(GRASS_TYPE);
+                        grass_block_pos.emplace_back((x + (i % (chunks.size()/2)) * 10), y, z + ((i / (chunks.size()/2)) * 10));
+                    }
+                    if (chunks[i].data[z + y * CHUNK_DEPTH + x * CHUNK_DEPTH * CHUNK_HEIGHT] == STONE_TYPE)
+                    {
+                        stone_blocks.emplace_back(STONE_TYPE);
+                        stone_block_pos.emplace_back((x + (i % (chunks.size()/2)) * 10), y, z + ((i / (chunks.size()/2)) * 10));
                     }
                 }
             }
@@ -233,29 +281,46 @@ void Game::update()
         glColorMask(0, 0, 0, 0);
         zshader->use();
         zmesh->bind();
-        for (size_t i = 0; i < blocks.size(); i++)
+        for (size_t i = 0; i < grass_blocks.size(); i++)
         {
-            if (glm::distance(block_pos[i], cam.pos) < 100.0f)
+            if (glm::distance(grass_block_pos[i], cam.pos) < BLOCK_MAX && glm::distance(grass_block_pos[i], cam.pos) > BLOCK_MIN)
             {
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), block_pos[i]);
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), grass_block_pos[i]);
                 zshader->set_uniform(model, "model");
                 glDrawElements(GL_TRIANGLES, zmesh->indices_count, GL_UNSIGNED_INT, 0);
             }
-        }
 
+        }
+        for (size_t i = 0; i < stone_block_pos.size(); i++)
+        {
+            if (glm::distance(stone_block_pos[i], cam.pos) < BLOCK_MAX && glm::distance(stone_block_pos[i], cam.pos) > BLOCK_MIN)
+            {
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), stone_block_pos[i]);
+                zshader->set_uniform(model, "model");
+                glDrawElements(GL_TRIANGLES, zmesh->indices_count, GL_UNSIGNED_INT, 0);
+            }
+
+        }
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_EQUAL);
         glColorMask(1, 1, 1, 1);
         shader->use();
-        mesh->bind();
-        for (size_t i = 0; i < blocks.size(); i++)
+        grass_mesh->bind();
+        for (size_t i = 0; i < grass_blocks.size(); i++)
         {
-            if (glm::distance(block_pos[i], cam.pos) < BLOCK_MAX || glm::distance(block_pos[i], cam.pos) > BLOCK_MIN)
+            if (glm::distance(grass_block_pos[i], cam.pos) < BLOCK_MAX && glm::distance(grass_block_pos[i], cam.pos) > BLOCK_MIN)
             {
-                blocks[i].draw(*shader, *mesh, block_pos[i]);
+                grass_blocks[i].draw(*shader, *grass_mesh, grass_block_pos[i]);
             }
         }
-
+        stone_mesh->bind();
+        for (size_t i = 0; i < stone_block_pos.size(); i++)
+        {
+            if (glm::distance(stone_block_pos[i], cam.pos) < BLOCK_MAX && glm::distance(stone_block_pos[i], cam.pos) > BLOCK_MIN)
+            {
+                stone_blocks[i].draw(*shader, *stone_mesh, stone_block_pos[i]);
+            }
+        }
         glDepthFunc(GL_LESS);
         glDepthMask(GL_TRUE);
     }
@@ -264,27 +329,25 @@ void Game::update()
         glDepthFunc(GL_LESS);
         glColorMask(1, 1, 1, 1);
         shader->use();
-        mesh->bind();
-        for (size_t i = 0; i < blocks.size(); i++)
+        grass_mesh->bind();
+        for (size_t i = 0; i < grass_blocks.size(); i++)
         {
-            if (glm::distance(block_pos[i], cam.pos) < 100.0f)
+            if (glm::distance(grass_block_pos[i], cam.pos) < BLOCK_MAX && glm::distance(grass_block_pos[i], cam.pos) > BLOCK_MIN)
             {
-                blocks[i].draw(*shader, *mesh, block_pos[i]);
+                grass_blocks[i].draw(*shader, *grass_mesh, grass_block_pos[i]);
             }
-        }   
+        }
+        stone_mesh->bind();
+        for (size_t i = 0; i < stone_block_pos.size(); i++)
+        {
+            if (glm::distance(stone_block_pos[i], cam.pos) < BLOCK_MAX && glm::distance(stone_block_pos[i], cam.pos) > BLOCK_MIN)
+            {
+                stone_blocks[i].draw(*shader, *stone_mesh, stone_block_pos[i]);
+            }
+        }
     }
     std::cout << "FPS: " << 1.0f / delta_time << "\n";
-    
+
     glfwSwapBuffers(window);
     glfwPollEvents();    
-}
-
-Game::~Game()
-{
-    delete shader;
-    delete mesh;
-    if(ZPREPASS){
-        delete zshader;
-        delete zmesh;
-    }
 }

@@ -11,12 +11,12 @@
 #include <iostream>
 #include <cassert>
 
-typedef struct {
+struct Material{
     float ambient[3];
     float diffuse[3];
     float specular[3];
     float shininess;
-} Material;
+};
 
 class Shader
 {

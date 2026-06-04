@@ -18,6 +18,11 @@
 #include "vbo.hpp"
 #include "ebo.hpp"
 
+#define WORLD_WIDTH 5
+#define WORLD_DEPTH 5
+
+#define PLAYER_SPEED 5.0f
+
 class Game
 {
     public:
@@ -26,7 +31,7 @@ class Game
         Camera cam;
         float delta_time = 0;
         float last_frame = 0;
-        Chunk *chunk = nullptr;
+        std::vector<Chunk> chunks;
         Texture *texture = nullptr;
 
         Game();

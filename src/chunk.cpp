@@ -1,18 +1,19 @@
 #include "chunk.hpp"
 
-Chunk::Chunk()
+Chunk::Chunk(const glm::vec3& pos)
 {
-    srand(time(NULL));
+    world_pos = pos;
     for (int x = 0; x < CHUNK_WIDTH; x++)
     {
         for (int z = 0; z < CHUNK_DEPTH; z++)
         {
             for(int y = 0; y < CHUNK_HEIGHT; y++)
             {
-                data[x][z][y] = (BlockType)(rand() % 3);
+                data[x][z][y] = (BlockType)(rand() % 4);
             }
         }
     }
+
     build_mesh();
     vbo.bind();
     vao.set_layout(0, 3, FLOAT);
@@ -168,6 +169,9 @@ std::array<float, 2> Chunk::get_tile(Face face, BlockType type)
         }
         tile_index = 0;
         break;
+    case DIRT_TYPE:
+        tile_index = 2;
+        break;
     
     default: assert(false && "invalid type to get the tile");
     }
@@ -184,7 +188,7 @@ void Chunk::draw(Shader& shader)
 {
     vao.bind();
     ebo.bind();
-    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), world_pos);
     shader.set_uniform(model, "model");
     glDrawElements(GL_TRIANGLES, ebo.indices_count, GL_UNSIGNED_INT, 0);
 }

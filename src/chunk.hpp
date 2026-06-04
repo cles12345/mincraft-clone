@@ -8,7 +8,7 @@
 #include "shader.hpp"
 
 #define CHUNK_WIDTH 10
-#define CHUNK_HEIGHT 10
+#define CHUNK_HEIGHT 255
 #define CHUNK_DEPTH 10
 
 #define ATLAS_COLS 16
@@ -28,7 +28,8 @@ enum BlockType
 {
     NONE,
     GRASS_TYPE,
-    STONE_TYPE
+    STONE_TYPE,
+    DIRT_TYPE
 };
 
 class Chunk
@@ -41,8 +42,10 @@ class Chunk
         VBO vbo = VBO();
         EBO ebo = EBO();
         bool dirty = true;
+        glm::vec3 world_pos = glm::vec3(0.0f, 0.0f, 0.0f);
 
-        Chunk();
+        Chunk(const glm::vec3& pos);
+        Chunk() = default;
         void build_mesh();
         void add_face(Face face, const glm::vec3& pos);
         std::array<float, 2> get_tile(Face face, BlockType type);

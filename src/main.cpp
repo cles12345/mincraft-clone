@@ -38,13 +38,32 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
     last_frame = glfwGetTime();
 
-    cam.pos = glm::vec3(0.0f, 270.0f, 0.0f);
+    cam.pos = glm::vec3(0.0f, 250.0f, 0.0f);
 
-    for (size_t x = 0; x < WORLD_WIDTH; x++)
+    for (int x = cam.pos.x / CHUNK_WIDTH; x < 5; x++)
     {
-        for (size_t z = 0; z < WORLD_DEPTH; z++)
+        for (int z = cam.pos.z / CHUNK_DEPTH; z < 5; z++)
         {   
-            chunks.emplace_back(glm::vec3(x * CHUNK_WIDTH, 0, z * CHUNK_DEPTH));
+            glm::ivec2 pos(x * CHUNK_WIDTH, z * CHUNK_DEPTH);
+
+            std::string path = "save/";
+            path += std::to_string(pos.x);
+            path += ",";
+            path += std::to_string(pos.y);
+            path += ".chunk";
+            if (utill::file_exist(path))
+            {
+                chunks.try_emplace(pos, glm::vec3(pos.x, 0, pos.y));
+                load_chunk(pos);
+                chunks[pos].build_mesh();
+            }
+            else
+            {
+                chunks.try_emplace(pos, glm::vec3(x * CHUNK_WIDTH, 0, z * CHUNK_DEPTH));
+                chunks[pos].create_data();
+                chunks[pos].build_mesh();
+                save_chunk(pos);
+            }
         }
     }
 
@@ -130,11 +149,93 @@ void Game::update()
     title += std::to_string(fps);
     glfwSetWindowTitle(window, title.c_str());
 
-    for (auto& chunk : chunks)
+    for (auto& [pos, chunk] : chunks)
     {
-        chunk.draw(*shader);
+        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE)
+        {
+            chunk.draw(*shader);
+        }
+        
     }
 
     glfwSwapBuffers(window);
     glfwPollEvents();    
+}
+
+void Game::save_chunk(glm::ivec2 pos)
+{
+    std::string path = "save/";
+    path += std::to_string(pos.x);
+    path += ",";
+    path += std::to_string(pos.y);
+    path += ".chunk";
+
+    utill::write_file(path, utill::world_data_to_string(chunks[pos].data));
+}
+
+void Game::load_chunk(glm::ivec2 pos)
+{
+    std::string path = "save/";
+    path += std::to_string(pos.x);
+    path += ",";
+    path += std::to_string(pos.y);
+    path += ".chunk";
+    std::string data = utill::read_file(path);
+
+    assert(!data.empty());
+
+    size_t i = 0;
+    for (size_t x = 0; x < CHUNK_WIDTH; x++)
+    {
+        for (size_t z = 0; z < CHUNK_DEPTH; z++)
+        {
+            for (size_t y = 0; y < CHUNK_HEIGHT; y++)
+            {  
+                while (i < data.size() && data[i] == ' ') 
+                {
+                    i++;
+                }
+                
+                if (i >= data.size()) break;
+                
+                char c = data[i];
+                switch(c)
+                {
+                    case '0': chunks[pos].data[x][z][y] = NONE; break;
+                    case '1': chunks[pos].data[x][z][y] = GRASS_TYPE; break;
+                    case '2': chunks[pos].data[x][z][y] = DIRT_TYPE; break;
+                    case '3': chunks[pos].data[x][z][y] = STONE_TYPE; break;
+                    case '4': chunks[pos].data[x][z][y] = WATER_TYPE; break;
+                }
+                i++;
+            }
+        }
+    }
+}
+
+namespace utill
+{
+    std::string world_data_to_string(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT])
+    {
+        std::string str = "";
+
+        for(size_t x = 0; x < CHUNK_WIDTH; x++)
+        {
+            for(size_t z = 0; z < CHUNK_DEPTH; z++)
+            {
+                for(size_t y = 0; y < CHUNK_HEIGHT; y++)
+                {
+                    switch (data[x][z][y])
+                    {
+                        case NONE: str += "0 "; break;
+                        case GRASS_TYPE: str += "1 "; break;
+                        case DIRT_TYPE: str += "2 "; break;
+                        case STONE_TYPE: str += "3 "; break;
+                        case WATER_TYPE: str += "4 "; break;
+                    }
+                }
+            }
+        }
+        return str;
+    }
 }

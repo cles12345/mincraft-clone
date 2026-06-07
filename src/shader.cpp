@@ -90,14 +90,6 @@ void Shader::set_uniform(const glm::mat4& value, const char* uniform_name)
     glUniformMatrix4fv(uniform_location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void Shader::set_uniform(Material material, const char* uniform_name)
-{
-    set_uniform(material.ambient[0], material.ambient[1], material.ambient[2], (std::string(uniform_name)+".ambient").c_str());
-    set_uniform(material.diffuse[0], material.diffuse[1], material.diffuse[2], (std::string(uniform_name)+".diffuse").c_str());
-    set_uniform(material.specular[0], material.specular[1], material.specular[2], (std::string(uniform_name)+".specular").c_str());
-    set_uniform(material.shininess, (std::string(uniform_name)+".shininess").c_str());
-}
-
 Shader::~Shader()
 {
     glDeleteShader(vertex_shader);

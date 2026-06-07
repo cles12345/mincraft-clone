@@ -5,6 +5,8 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <gtx/hash.hpp>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -17,11 +19,17 @@
 #include "vao.hpp"
 #include "vbo.hpp"
 #include "ebo.hpp"
-
-#define WORLD_WIDTH 5
-#define WORLD_DEPTH 5
+#include "utill.hpp"
 
 #define PLAYER_SPEED 5.0f
+
+#define RENDER_DISTANCE_CHUNKS 4
+#define RENDER_DISTANCE (RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH + CHUNK_WIDTH)
+
+namespace utill
+{
+    std::string world_data_to_string(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT]);
+}
 
 class Game
 {
@@ -31,7 +39,7 @@ class Game
         Camera cam;
         float delta_time = 0;
         float last_frame = 0;
-        std::vector<Chunk> chunks;
+        std::unordered_map<glm::ivec2, Chunk> chunks;
         Texture *texture = nullptr;
 
         Game();
@@ -41,4 +49,6 @@ class Game
         void calculate_delta_time();
         void calculate_camera_pos();
         void update();
+        void save_chunk(glm::ivec2 pos);
+        void load_chunk(glm::ivec2 pos);
 };

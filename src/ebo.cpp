@@ -18,7 +18,7 @@ EBO::EBO()
 void EBO::send_buffer(const unsigned int indicies[], size_t indicies_size)
 {
     indices_count = indicies_size/sizeof(unsigned int);
-
+    bind();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies_size, indicies, GL_STATIC_DRAW);
 }
 

@@ -15,6 +15,7 @@ $(BUILDDIR)/game: $(addprefix $(BUILDDIR)/, $(OBJ)) $(LIBDIR)/glad/glad.o
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(BUILDDIR)
+	@mkdir -p save/
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 run: $(addprefix $(BUILDDIR)/, $(OBJ)) $(BUILDDIR)/game
@@ -22,3 +23,4 @@ run: $(addprefix $(BUILDDIR)/, $(OBJ)) $(BUILDDIR)/game
 
 clean:
 	rm -rf $(BUILDDIR)
+	rm -rf save/

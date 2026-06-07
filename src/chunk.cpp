@@ -2,28 +2,56 @@
 
 Chunk::Chunk(const glm::vec3& pos)
 {
-    world_pos = pos;
+    world_pos = pos;    
+}
+
+void Chunk::create_data()
+{
+    memset(data, 0, sizeof(data));
+
     for (int x = 0; x < CHUNK_WIDTH; x++)
     {
         for (int z = 0; z < CHUNK_DEPTH; z++)
         {
             for(int y = 0; y < CHUNK_HEIGHT; y++)
             {
-                data[x][z][y] = (BlockType)(rand() % 4);
+                if (y == CHUNK_HEIGHT-1)
+                {
+                    bool water = rand() % 2;
+                    if(water)
+                    {
+                        data[x][z][y] = WATER_TYPE;
+                    }
+                    else
+                    {
+                        data[x][z][y] = GRASS_TYPE;
+                
+                    }
+                }
+                else if(y > CHUNK_HEIGHT-5)
+                {   
+                    data[x][z][y] = DIRT_TYPE;
+                }
+                else
+                {
+                    bool stone = rand() % 2;
+                    if(stone)
+                    {
+                        data[x][z][y] = STONE_TYPE;
+                    }
+                    else
+                    {
+                        data[x][z][y] = NONE;
+                
+                    }
+                }
             }
         }
     }
-
-    build_mesh();
-    vbo.bind();
-    vao.set_layout(0, 3, FLOAT);
-    vao.set_layout(1, 3, FLOAT);
-    vao.set_layout(2, 2, FLOAT);
 }
 
 void Chunk::build_mesh()
 {
-    dirty = true;
     vertices.clear();
     indices.clear();
     for (size_t x = 0; x < CHUNK_WIDTH; x++)
@@ -51,14 +79,17 @@ void Chunk::build_mesh()
             }
         }
     }
+    vao.bind();
+    ebo.bind(); 
+    vbo.bind();
+    vao.set_layout(0, 3, FLOAT);
+    vao.set_layout(1, 3, FLOAT);
+    vao.set_layout(2, 2, FLOAT);
     vbo.send_buffer(vertices.data(), vertices.size());
     ebo.send_buffer(indices.data(), indices.size() * sizeof(unsigned int));
 
-    vao.bind();
-    ebo.bind(); 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    dirty = false;
 }
 
 void Chunk::add_face(Face face, const glm::vec3& pos)
@@ -171,6 +202,9 @@ std::array<float, 2> Chunk::get_tile(Face face, BlockType type)
         break;
     case DIRT_TYPE:
         tile_index = 2;
+        break;
+    case WATER_TYPE:
+        tile_index = 4;
         break;
     
     default: assert(false && "invalid type to get the tile");

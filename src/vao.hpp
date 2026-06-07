@@ -2,7 +2,7 @@
 #include <glad.h>
 #include <glfw3.h>
 
-enum VERTEX_TYPE 
+enum VERTEX_TYPE : uint8_t 
 {
     FLOAT,
     INT,

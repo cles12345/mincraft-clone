@@ -7,4 +7,6 @@
 
 namespace utill{
     std::string read_file(const std::string& path);
+    void write_file(const std::string& path, const std::string& data);
+    bool file_exist(const std::string& path);
 }

@@ -11,13 +11,6 @@
 #include <iostream>
 #include <cassert>
 
-struct Material{
-    float ambient[3];
-    float diffuse[3];
-    float specular[3];
-    float shininess;
-};
-
 class Shader
 {
     public:
@@ -33,6 +26,5 @@ class Shader
         void set_uniform(float value1, float value2, float value3, const char* uniform_name);
         void set_uniform(float value1, float value2, float value3, float value4, const char* uniform_name);
         void set_uniform(const glm::mat4& value, const char* uniform_name);
-        void set_uniform(Material material, const char* uniform_name);
         ~Shader();
 };

@@ -5,8 +5,8 @@ OBJ = $(SRC:.cpp=.o)
 SRCDIR = src
 BUILDDIR = build
 LIBDIR = libs
-INCDIR = -Iinc/GLFW -Iinc/glad -Iinc/stb -Iinc/glm 
-LDLIBS = -L$(LIBDIR)/glfw/ -L$(LIBDIR)/glad/ -lglfw3 -lopengl32 -lgdi32
+INCDIR = -Iinc/GLFW -Iinc/glad -Iinc/stb -Iinc/glm -Iinc/FastNoiseLite/
+LDLIBS = -L$(LIBDIR)/glfw/ -lglfw3 -lopengl32 -lgdi32
 
 all: $(BUILDDIR)/game
 

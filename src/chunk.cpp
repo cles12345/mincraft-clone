@@ -5,46 +5,36 @@ Chunk::Chunk(const glm::vec3& pos)
     world_pos = pos;    
 }
 
-void Chunk::create_data()
+void Chunk::create_data(int seed)
 {
     memset(data, 0, sizeof(data));
+
+    FastNoiseLite noise;
+
+    noise.SetNoiseType(FastNoiseLite::NoiseType_Value);
+    noise.SetFrequency(0.01f);
+    noise.SetSeed(seed);
 
     for (int x = 0; x < CHUNK_WIDTH; x++)
     {
         for (int z = 0; z < CHUNK_DEPTH; z++)
         {
-            for(int y = 0; y < CHUNK_HEIGHT; y++)
+            float noise_value = noise.GetNoise((float)x + world_pos.x, (float)z + world_pos.z);
+            int height = (int)((noise_value + 1.0f) / 2.0f * CHUNK_HEIGHT);
+
+            if (height < 0) height = 0;
+            if (height >= CHUNK_HEIGHT) height = CHUNK_HEIGHT - 1;
+
+            for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
-                if (y == CHUNK_HEIGHT-1)
-                {
-                    bool water = rand() % 2;
-                    if(water)
-                    {
-                        data[x][z][y] = WATER_TYPE;
-                    }
-                    else
-                    {
-                        data[x][z][y] = GRASS_TYPE;
-                
-                    }
-                }
-                else if(y > CHUNK_HEIGHT-5)
-                {   
+                if (y < height - 3)
+                    data[x][z][y] = STONE_TYPE;
+                else if (y < height)
                     data[x][z][y] = DIRT_TYPE;
-                }
+                else if (y == height)
+                    data[x][z][y] = GRASS_TYPE;
                 else
-                {
-                    bool stone = rand() % 2;
-                    if(stone)
-                    {
-                        data[x][z][y] = STONE_TYPE;
-                    }
-                    else
-                    {
-                        data[x][z][y] = NONE;
-                
-                    }
-                }
+                    data[x][z][y] = NONE;
             }
         }
     }

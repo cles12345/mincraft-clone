@@ -32,17 +32,19 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     }    
     glViewport(0, 0, 800, 600);
     
-    srand(time(NULL));
+    srand(time(nullptr));
+
+    int seed = rand();
     
     shader = new Shader("shaders/shader.vert", "shaders/shader.frag");
     texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
     last_frame = glfwGetTime();
 
-    cam.pos = glm::vec3(0.0f, 250.0f, 0.0f);
+    cam.pos = glm::vec3(0.0f, 200.0f, 0.0f);
 
-    for (int x = cam.pos.x / CHUNK_WIDTH; x < 5; x++)
+    for (int x = cam.pos.x / CHUNK_WIDTH; x < 10; x++)
     {
-        for (int z = cam.pos.z / CHUNK_DEPTH; z < 5; z++)
+        for (int z = cam.pos.z / CHUNK_DEPTH; z < 10; z++)
         {   
             glm::ivec2 pos(x * CHUNK_WIDTH, z * CHUNK_DEPTH);
 
@@ -60,7 +62,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
             else
             {
                 chunks.try_emplace(pos, glm::vec3(x * CHUNK_WIDTH, 0, z * CHUNK_DEPTH));
-                chunks[pos].create_data();
+                chunks[pos].create_data(seed);
                 chunks[pos].build_mesh();
                 save_chunk(pos);
             }

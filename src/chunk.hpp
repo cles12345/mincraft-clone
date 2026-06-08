@@ -6,6 +6,7 @@
 #include "vbo.hpp"  
 #include "ebo.hpp"
 #include "shader.hpp"
+#include "FastNoiseLite.h"
 
 #define CHUNK_WIDTH 16
 #define CHUNK_HEIGHT 255
@@ -46,7 +47,7 @@ class Chunk
 
         Chunk(const glm::vec3& pos);
         Chunk() = default;
-        void create_data();
+        void create_data(int seed);
         void build_mesh();
         void add_face(Face face, const glm::vec3& pos);
         std::array<float, 2> get_tile(Face face, BlockType type);

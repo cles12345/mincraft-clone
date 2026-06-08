@@ -2,6 +2,8 @@
 #include <vector>
 #include <ctime>
 #include <array>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <gtx/hash.hpp>
 #include "vao.hpp"
 #include "vbo.hpp"  
 #include "ebo.hpp"
@@ -48,7 +50,7 @@ class Chunk
         Chunk(const glm::vec3& pos);
         Chunk() = default;
         void create_data(int seed);
-        void build_mesh();
+        void build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks);
         void add_face(Face face, const glm::vec3& pos);
         std::array<float, 2> get_tile(Face face, BlockType type);
         void draw(Shader& shader);

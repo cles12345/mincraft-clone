@@ -40,10 +40,37 @@ void Chunk::create_data(int seed)
     }
 }
 
-void Chunk::build_mesh()
+void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 {
     vertices.clear();
     indices.clear();
+    Chunk* right = nullptr;
+    Chunk* left = nullptr;
+    Chunk* front = nullptr;
+    Chunk* back = nullptr;
+
+    glm::ivec2 Pos(world_pos.x + CHUNK_WIDTH, world_pos.z);
+    if (chunks.count(Pos))
+    {
+        right = &chunks[Pos];
+    }
+    Pos.x = world_pos.x - CHUNK_WIDTH;
+    if (chunks.count(Pos))
+    {
+        left = &chunks[Pos];
+    }
+    Pos.x = world_pos.x;
+    Pos.y  = world_pos.z + CHUNK_DEPTH;
+    if (chunks.count(Pos))
+    {
+        front = &chunks[Pos];
+    }
+    Pos.y  = world_pos.z - CHUNK_DEPTH;
+    if (chunks.count(Pos))
+    {
+        back = &chunks[Pos];
+    }
+    
     for (size_t x = 0; x < CHUNK_WIDTH; x++)
     {
         for (size_t z = 0; z < CHUNK_DEPTH; z++)
@@ -54,18 +81,63 @@ void Chunk::build_mesh()
 
                 glm::vec3 pos(x, y, z);
 
-                if (x+1 >= CHUNK_WIDTH || data[x+1][z][y] == NONE)
+                if (x+1 >= CHUNK_WIDTH)
+                {
+                    if (right == nullptr || right->data[0][z][y] == NONE)
+                    {
+                        add_face(RIGHT, pos);
+                    }
+                }
+                else if(data[x+1][z][y] == NONE)
+                {
                     add_face(RIGHT, pos);
-                if (x == 0 || data[x-1][z][y] == NONE)
+                }
+
+                if (x == 0)
+                {
+                    if (left == nullptr || left->data[CHUNK_WIDTH-1][z][y] == NONE)
+                    {
+                        add_face(LEFT, pos);
+                
+                    }
+                }
+                else if(data[x-1][z][y] == NONE)
+                {
                     add_face(LEFT, pos);
+                }
+
                 if (y+1 >= CHUNK_HEIGHT || data[x][z][y+1] == NONE)
+                {
                     add_face(TOP, pos);
+                }
                 if (y == 0 || data[x][z][y-1] == NONE)
+                {
                     add_face(BOTTOM, pos);
-                if (z+1 >= CHUNK_DEPTH || data[x][z+1][y] == NONE)
+                }
+
+                if (z+1 >= CHUNK_DEPTH)
+                {
+                    if (front == nullptr || front->data[x][0][y] == NONE)
+                    {
+                        add_face(FRONT, pos);
+                    }
+                }
+                else if(data[x][z+1][y] == NONE)
+                {
                     add_face(FRONT, pos);
-                if (z == 0 || data[x][z-1][y] == NONE)
+                }
+                if (z == 0)
+                {
+                    if (back == nullptr || back->data[x][CHUNK_DEPTH-1][y] == NONE)
+                    {
+                        add_face(BACK, pos);
+                
+                    }
+                }
+                else if(data[x][z-1][y] == NONE)
+                {
                     add_face(BACK, pos);
+                }
             }
         }
     }

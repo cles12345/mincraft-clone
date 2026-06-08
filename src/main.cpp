@@ -57,16 +57,19 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
             {
                 chunks.try_emplace(pos, glm::vec3(pos.x, 0, pos.y));
                 load_chunk(pos);
-                chunks[pos].build_mesh();
             }
             else
             {
                 chunks.try_emplace(pos, glm::vec3(x * CHUNK_WIDTH, 0, z * CHUNK_DEPTH));
                 chunks[pos].create_data(seed);
-                chunks[pos].build_mesh();
                 save_chunk(pos);
             }
         }
+    }
+
+    for (auto& [pos, chunk] : chunks)
+    {
+        chunk.build_mesh(chunks);
     }
 
     glEnable(GL_DEPTH_TEST);

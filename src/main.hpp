@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <cassert>
+#include <queue>
 #include <cmath>
 #include "shader.hpp"
 #include "texture.hpp"
@@ -21,9 +22,9 @@
 #include "ebo.hpp"
 #include "utill.hpp"
 
-#define PLAYER_SPEED 5.0f
+#define PLAYER_SPEED 20.0f
 
-#define RENDER_DISTANCE_CHUNKS 4
+#define RENDER_DISTANCE_CHUNKS 8
 #define RENDER_DISTANCE (RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH + CHUNK_WIDTH)
 
 namespace utill
@@ -40,7 +41,11 @@ class Game
         float delta_time = 0;
         float last_frame = 0;
         std::unordered_map<glm::ivec2, Chunk> chunks;
+        std::vector<glm::ivec2> to_load;
+        std::vector<glm::ivec2> to_unload;
         Texture *texture = nullptr;
+        int seed = 0;
+        glm::ivec2 last_chunk = {0, 0};
 
         Game();
         void game_loop();
@@ -51,4 +56,6 @@ class Game
         void update();
         void save_chunk(glm::ivec2 pos);
         void load_chunk(glm::ivec2 pos);
+        void unload_far_chunks();
+        void load_world();
 };

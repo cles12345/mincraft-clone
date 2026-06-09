@@ -5,7 +5,7 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 
-#define BLOCK_MAX 100.0f
+#define BLOCK_MAX 100000.0f
 #define BLOCK_MIN 0.1f
 
 class Camera

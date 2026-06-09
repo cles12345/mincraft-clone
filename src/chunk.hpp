@@ -46,6 +46,8 @@ class Chunk
         VBO vbo = VBO();
         EBO ebo = EBO();
         glm::vec3 world_pos = glm::vec3(0.0f, 0.0f, 0.0f);
+        bool dirty = false;
+        bool created_data = false;
 
         Chunk(const glm::vec3& pos);
         Chunk() = default;

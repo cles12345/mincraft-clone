@@ -2,11 +2,14 @@
 
 Chunk::Chunk(const glm::vec3& pos)
 {
+    dirty = false;
+    created_data = false;
     world_pos = pos;    
 }
 
 void Chunk::create_data(int seed)
 {
+    dirty = true;
     memset(data, 0, sizeof(data));
 
     FastNoiseLite noise;
@@ -38,6 +41,7 @@ void Chunk::create_data(int seed)
             }
         }
     }
+    created_data = true;
 }
 
 void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
@@ -152,6 +156,8 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    dirty = false;
 }
 
 void Chunk::add_face(Face face, const glm::vec3& pos)

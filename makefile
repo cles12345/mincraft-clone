@@ -6,7 +6,7 @@ SRCDIR = src
 BUILDDIR = build
 LIBDIR = libs
 INCDIR = -Iinc/GLFW -Iinc/glad -Iinc/stb -Iinc/glm -Iinc/FastNoiseLite/
-LDLIBS = -L$(LIBDIR)/glfw/ -lglfw3 -lopengl32 -lgdi32
+LDLIBS = -L$(LIBDIR)/glfw/ -lglfw3 -lopengl32 -lgdi32 -static
 
 all: $(BUILDDIR)/game
 

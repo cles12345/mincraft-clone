@@ -48,33 +48,39 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 {
     vertices.clear();
     indices.clear();
+
+    vertices.reserve(CHUNK_WIDTH * CHUNK_DEPTH * CHUNK_HEIGHT * 6 * 4);
+    indices.reserve(CHUNK_WIDTH * CHUNK_DEPTH * CHUNK_HEIGHT * 6 * 6);
+
+    static int total_faces = 0;
+
     Chunk* right = nullptr;
     Chunk* left = nullptr;
     Chunk* front = nullptr;
     Chunk* back = nullptr;
 
     glm::ivec2 Pos(world_pos.x + CHUNK_WIDTH, world_pos.z);
-    if (chunks.count(Pos))
+    if (chunks.count(Pos) && chunks[Pos].created_data)
     {
         right = &chunks[Pos];
     }
     Pos.x = world_pos.x - CHUNK_WIDTH;
-    if (chunks.count(Pos))
+    if (chunks.count(Pos) && chunks[Pos].created_data)
     {
         left = &chunks[Pos];
     }
     Pos.x = world_pos.x;
     Pos.y  = world_pos.z + CHUNK_DEPTH;
-    if (chunks.count(Pos))
+    if (chunks.count(Pos) && chunks[Pos].created_data)
     {
         front = &chunks[Pos];
     }
     Pos.y  = world_pos.z - CHUNK_DEPTH;
-    if (chunks.count(Pos))
+    if (chunks.count(Pos) && chunks[Pos].created_data)
     {
         back = &chunks[Pos];
     }
-    
+
     for (size_t x = 0; x < CHUNK_WIDTH; x++)
     {
         for (size_t z = 0; z < CHUNK_DEPTH; z++)
@@ -90,33 +96,39 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
                     if (right == nullptr || right->data[0][z][y] == NONE)
                     {
                         add_face(RIGHT, pos);
+                        total_faces++;
                     }
                 }
                 else if(data[x+1][z][y] == NONE)
                 {
                     add_face(RIGHT, pos);
+                    total_faces++;
                 }
-
+                
                 if (x == 0)
                 {
                     if (left == nullptr || left->data[CHUNK_WIDTH-1][z][y] == NONE)
                     {
                         add_face(LEFT, pos);
+                        total_faces++;
                 
                     }
                 }
                 else if(data[x-1][z][y] == NONE)
                 {
                     add_face(LEFT, pos);
+                    total_faces++;
                 }
-
+                
                 if (y+1 >= CHUNK_HEIGHT || data[x][z][y+1] == NONE)
                 {
                     add_face(TOP, pos);
+                    total_faces++;
                 }
                 if (y == 0 || data[x][z][y-1] == NONE)
                 {
                     add_face(BOTTOM, pos);
+                    total_faces++;
                 }
 
                 if (z+1 >= CHUNK_DEPTH)
@@ -124,30 +136,34 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
                     if (front == nullptr || front->data[x][0][y] == NONE)
                     {
                         add_face(FRONT, pos);
+                        total_faces++;
                     }
                 }
                 else if(data[x][z+1][y] == NONE)
                 {
                     add_face(FRONT, pos);
+                    total_faces++;
                 }
                 if (z == 0)
                 {
                     if (back == nullptr || back->data[x][CHUNK_DEPTH-1][y] == NONE)
                     {
                         add_face(BACK, pos);
-                
+                        total_faces++;
                     }
                 }
                 else if(data[x][z-1][y] == NONE)
                 {
                     add_face(BACK, pos);
+                    total_faces++;
                 }
             }
         }
     }
     vao.bind();
-    ebo.bind(); 
     vbo.bind();
+    ebo.bind();
+
     vao.set_layout(0, 3, FLOAT);
     vao.set_layout(1, 3, FLOAT);
     vao.set_layout(2, 2, FLOAT);
@@ -293,4 +309,13 @@ void Chunk::draw(Shader& shader)
     glm::mat4 model = glm::translate(glm::mat4(1.0f), world_pos);
     shader.set_uniform(model, "model");
     glDrawElements(GL_TRIANGLES, ebo.indices_count, GL_UNSIGNED_INT, 0);
+}
+
+Chunk::~Chunk()
+{
+    vao.~VAO();
+    vbo.~VBO();
+    ebo.~EBO();
+    vertices.clear();
+    indices.clear();
 }

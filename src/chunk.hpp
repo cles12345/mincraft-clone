@@ -56,4 +56,5 @@ class Chunk
         void add_face(Face face, const glm::vec3& pos);
         std::array<float, 2> get_tile(Face face, BlockType type);
         void draw(Shader& shader);
+        ~Chunk();
 };

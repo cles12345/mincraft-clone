@@ -10,8 +10,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 #include <cassert>
-#include <queue>
 #include <cmath>
 #include "shader.hpp"
 #include "texture.hpp"
@@ -24,12 +24,12 @@
 
 #define PLAYER_SPEED 20.0f
 
-#define RENDER_DISTANCE_CHUNKS 8
+#define RENDER_DISTANCE_CHUNKS 10
 #define RENDER_DISTANCE (RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH + CHUNK_WIDTH)
 
 namespace utill
 {
-    std::string world_data_to_string(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT]);
+    std::vector<uint8_t> world_data_to_uint8(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT]);
 }
 
 class Game
@@ -44,7 +44,7 @@ class Game
         std::vector<glm::ivec2> to_load;
         std::vector<glm::ivec2> to_unload;
         Texture *texture = nullptr;
-        int seed = 0;
+        uint32_t seed = 0;
         glm::ivec2 last_chunk = {0, 0};
 
         Game();
@@ -57,5 +57,4 @@ class Game
         void save_chunk(glm::ivec2 pos);
         void load_chunk(glm::ivec2 pos);
         void unload_far_chunks();
-        void load_world();
 };

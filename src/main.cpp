@@ -45,7 +45,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     }
 
     shader = new Shader("shaders/shader.vert", "shaders/shader.frag");
-    texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
+    texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
     last_frame = glfwGetTime();
 
     cam.pos = glm::vec3(0.0f, 200.0f, 0.0f);
@@ -53,13 +53,11 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     last_chunk.x = std::floor(cam.pos.x / CHUNK_WIDTH);
     last_chunk.y = std::floor(cam.pos.z / CHUNK_DEPTH);
 
-    unload_far_chunks();
-
     int radius = RENDER_DISTANCE_CHUNKS / 2;
     for (int x = last_chunk.x - radius; x <= last_chunk.x + radius; x++)
     {
         for (int z = last_chunk.y - radius; z <= last_chunk.y + radius; z++)
-            {
+        {
             glm::ivec2 pos(x * CHUNK_WIDTH, z * CHUNK_DEPTH);
             if (!chunks.count(pos))
             {
@@ -121,7 +119,7 @@ void Game::check_events()
     if (moved)
     {
         glm::ivec2 current_chunk = {std::floor(cam.pos.x / CHUNK_WIDTH), std::floor(cam.pos.z / CHUNK_DEPTH)};
-        if (current_chunk  != last_chunk)
+        if (current_chunk != last_chunk)
         {
             last_chunk = current_chunk;
             unload_far_chunks();
@@ -176,75 +174,81 @@ void Game::update()
     shader->set_uniform(cam.pos[0], cam.pos[1], cam.pos[2], "viewPos");
 
     float fps = 1.0f / delta_time;
-
-    std::string title = "FPS: "; 
-    title += std::to_string(fps);
+    std::string title = "FPS: " + std::to_string(fps);
     glfwSetWindowTitle(window, title.c_str());
-
-    to_load.clear();
-    to_unload.clear();
-
-    unload_far_chunks();
 
     for (auto& [pos, chunk] : chunks)
     {
-        if (!chunk.created_data || chunk.dirty)
+        if (!chunk.created_data && !chunk.added_to_load)
         {
             to_load.push_back(pos);
+            chunk.added_to_load = true;
         }
 
-        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && !chunk.dirty &&  chunk.created_data)
+        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && !chunk.dirty && chunk.created_data)
         {
             chunk.draw(*shader);
         }
+
+        GLenum error;
+        while ((error = glGetError()) != GL_NO_ERROR)
+        {
+            std::cout << error << '\n';
+        }
     }
 
-    int i = 0;
-    for (auto& pos : to_load)
+    size_t loaded = 0;
+    while (!to_load.empty() && loaded < 3)
     {
-        if (i >= 3) break; 
+        auto pos = to_load.back();
 
         if(!chunks.count(pos))
         {
             chunks.try_emplace(pos, glm::vec3(pos.x, 0, pos.y));
         }
-        std::string path = "save/";
-        path += std::to_string(pos.x);
-        path += ",";
-        path += std::to_string(pos.y);
-        path += ".chunk";
-        if (!utill::file_exist(path))
+        
+        std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
+        
+        if (!utill::file_exist(path) && !chunks[pos].created_data)
         {
             chunks[pos].create_data(seed);
             save_chunk(pos);
         }
-        else
+        else if (!chunks[pos].created_data)
         {
             load_chunk(pos);
         }
-        chunks[pos].build_mesh(chunks);
-        i++;
+        
+        chunks[pos].added_to_load = false;
+        
+        to_load.pop_back();
+        loaded++;
     }
 
-    i = 0;
-    for (auto& pos : to_unload)
+    for (auto& [pos, chunk] : chunks)
     {
-        if (i >= 3) break; 
+        if (chunk.created_data && chunk.dirty)
+        {
+            chunk.build_mesh(chunks); 
+        }
+    }
+
+    size_t unloaded = 0;
+    while (!to_unload.empty() && unloaded < 3)
+    {
+        auto pos = to_unload.back();
         
         if(chunks.count(pos))
         {
-            std::string path = "save/";
-            path += std::to_string(pos.x);
-            path += ",";
-            path += std::to_string(pos.y);
-            path += ".chunk";
+            std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
             if (!utill::file_exist(path))
             {
                 save_chunk(pos);
             }
             chunks.erase(pos);
-            i++;
+            unloaded++;
         }
+        to_unload.pop_back();
     }
 
     glfwSwapBuffers(window);
@@ -253,22 +257,14 @@ void Game::update()
 
 void Game::save_chunk(glm::ivec2 pos)
 {
-    std::string path = "save/";
-    path += std::to_string(pos.x);
-    path += ",";
-    path += std::to_string(pos.y);
-    path += ".chunk";
-
-    utill::write_file_binary(path, utill::world_data_to_uint8(chunks[pos].data).data(), (CHUNK_WIDTH * CHUNK_DEPTH * CHUNK_HEIGHT) * sizeof(uint8_t));
+    std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
+    std::vector<uint8_t> data = utill::world_data_to_uint8(chunks[pos].data);
+    utill::write_file_binary(path, data.data(), data.size() * sizeof(uint8_t));
 }
 
 void Game::load_chunk(glm::ivec2 pos)
 {
-    std::string path = "save/";
-    path += std::to_string(pos.x);
-    path += ",";
-    path += std::to_string(pos.y);
-    path += ".chunk";
+    std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
     std::vector<uint8_t> data = utill::read_file_binary_vector(path);
 
     assert(!data.empty());
@@ -283,6 +279,7 @@ void Game::load_chunk(glm::ivec2 pos)
     }
     
     chunks[pos].created_data = true;
+    chunks[pos].dirty = true;
 }
 
 void Game::unload_far_chunks()
@@ -291,16 +288,16 @@ void Game::unload_far_chunks()
         cam.pos.x,
         cam.pos.z
     };
-    
     for (auto& [pos, chunk] : chunks)
     {
         glm::vec2 chunk_pos = {
             (float)pos.x,
             (float)pos.y
         };
-        if (glm::distance(play_pos, chunk_pos) > (RENDER_DISTANCE + 1))
+        if (glm::distance(play_pos, chunk_pos) > (RENDER_DISTANCE + 1) && !chunk.added_to_unload)
         {
             to_unload.push_back(pos);
+            chunk.added_to_unload = true;
         }
     }
 }

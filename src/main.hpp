@@ -22,10 +22,10 @@
 #include "ebo.hpp"
 #include "utill.hpp"
 
-#define PLAYER_SPEED 20.0f
+constexpr float PLAYER_SPEED = 20.0f;
 
-#define RENDER_DISTANCE_CHUNKS 10
-#define RENDER_DISTANCE (RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH + CHUNK_WIDTH)
+constexpr int RENDER_DISTANCE_CHUNKS = 20;
+constexpr int RENDER_DISTANCE = RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH;
 
 namespace utill
 {

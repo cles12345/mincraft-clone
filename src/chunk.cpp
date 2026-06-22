@@ -46,40 +46,22 @@ void Chunk::create_data(int seed)
 
 void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 {
+    glm::ivec2 pos_r(static_cast<int>(world_pos.x) + CHUNK_WIDTH, static_cast<int>(world_pos.z));
+    glm::ivec2 pos_l(static_cast<int>(world_pos.x) - CHUNK_WIDTH, static_cast<int>(world_pos.z));
+    glm::ivec2 pos_f(static_cast<int>(world_pos.x),               static_cast<int>(world_pos.z) + CHUNK_DEPTH);
+    glm::ivec2 pos_b(static_cast<int>(world_pos.x),               static_cast<int>(world_pos.z) - CHUNK_DEPTH);
+    
+    if (!chunks.count(pos_r) || !chunks[pos_r].created_data) return;
+    if (!chunks.count(pos_l) || !chunks[pos_l].created_data) return;
+    if (!chunks.count(pos_f) || !chunks[pos_f].created_data) return;
+    if (!chunks.count(pos_b) || !chunks[pos_b].created_data) return;
+
     vertices.clear();
     indices.clear();
-
-    vertices.reserve(CHUNK_WIDTH * CHUNK_DEPTH * CHUNK_HEIGHT * 6 * 4);
-    indices.reserve(CHUNK_WIDTH * CHUNK_DEPTH * CHUNK_HEIGHT * 6 * 6);
-
-    static int total_faces = 0;
-
-    Chunk* right = nullptr;
-    Chunk* left = nullptr;
-    Chunk* front = nullptr;
-    Chunk* back = nullptr;
-
-    glm::ivec2 Pos(world_pos.x + CHUNK_WIDTH, world_pos.z);
-    if (chunks.count(Pos) && chunks[Pos].created_data)
-    {
-        right = &chunks[Pos];
-    }
-    Pos.x = world_pos.x - CHUNK_WIDTH;
-    if (chunks.count(Pos) && chunks[Pos].created_data)
-    {
-        left = &chunks[Pos];
-    }
-    Pos.x = world_pos.x;
-    Pos.y  = world_pos.z + CHUNK_DEPTH;
-    if (chunks.count(Pos) && chunks[Pos].created_data)
-    {
-        front = &chunks[Pos];
-    }
-    Pos.y  = world_pos.z - CHUNK_DEPTH;
-    if (chunks.count(Pos) && chunks[Pos].created_data)
-    {
-        back = &chunks[Pos];
-    }
+    Chunk* right = &chunks[pos_r];
+    Chunk* left  = &chunks[pos_l];
+    Chunk* front = &chunks[pos_f];
+    Chunk* back  = &chunks[pos_b];
 
     for (size_t x = 0; x < CHUNK_WIDTH; x++)
     {
@@ -88,7 +70,6 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
             for (size_t y = 0; y < CHUNK_HEIGHT; y++)
             {
                 if (data[x][z][y] == NONE) continue;
-
                 glm::vec3 pos(x, y, z);
 
                 if (x+1 >= CHUNK_WIDTH)
@@ -96,66 +77,52 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
                     if (right == nullptr || right->data[0][z][y] == NONE)
                     {
                         add_face(RIGHT, pos);
-                        total_faces++;
                     }
                 }
                 else if(data[x+1][z][y] == NONE)
                 {
                     add_face(RIGHT, pos);
-                    total_faces++;
                 }
-                
                 if (x == 0)
                 {
                     if (left == nullptr || left->data[CHUNK_WIDTH-1][z][y] == NONE)
                     {
                         add_face(LEFT, pos);
-                        total_faces++;
-                
                     }
                 }
                 else if(data[x-1][z][y] == NONE)
                 {
                     add_face(LEFT, pos);
-                    total_faces++;
                 }
-                
                 if (y+1 >= CHUNK_HEIGHT || data[x][z][y+1] == NONE)
                 {
                     add_face(TOP, pos);
-                    total_faces++;
                 }
                 if (y == 0 || data[x][z][y-1] == NONE)
                 {
                     add_face(BOTTOM, pos);
-                    total_faces++;
                 }
-
                 if (z+1 >= CHUNK_DEPTH)
                 {
                     if (front == nullptr || front->data[x][0][y] == NONE)
                     {
                         add_face(FRONT, pos);
-                        total_faces++;
                     }
                 }
                 else if(data[x][z+1][y] == NONE)
                 {
                     add_face(FRONT, pos);
-                    total_faces++;
                 }
                 if (z == 0)
                 {
                     if (back == nullptr || back->data[x][CHUNK_DEPTH-1][y] == NONE)
                     {
                         add_face(BACK, pos);
-                        total_faces++;
                     }
                 }
                 else if(data[x][z-1][y] == NONE)
                 {
                     add_face(BACK, pos);
-                    total_faces++;
                 }
             }
         }
@@ -172,15 +139,16 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
+
     dirty = false;
 }
 
-void Chunk::add_face(Face face, const glm::vec3& pos)
+
+
+void Chunk::add_face(Face face, glm::vec3 pos)
 {
-    float Pos[3] = {pos.x, pos.y, pos.z};
     float norm[3] = {0};
-    auto uv = get_tile(face, data[(int)Pos[0]][(int)Pos[2]][(int)Pos[1]]);
+    auto uv = get_tile(face, data[(int)pos.x][(int)pos.z][(int)pos.y]);
     float u0 = uv[0];
     float v0 = uv[1];
     float u1 = u0 + (1.0f / ATLAS_COLS);
@@ -189,65 +157,61 @@ void Chunk::add_face(Face face, const glm::vec3& pos)
     switch (face)
     {
         case TOP:
-            Pos[1] += 1.0f;
+            pos.y += 1.0f;
             norm[0] = 0.0f;
             norm[1] = 1.0f;
             norm[2] = 0.0f;
-            vertices.push_back({Pos[0], Pos[1], Pos[2], norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({Pos[0]+1, Pos[1], Pos[2], norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({Pos[0]+1, Pos[1], Pos[2]+1, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({Pos[0], Pos[1], Pos[2]+1, norm[0], norm[1], norm[2], u0, v1});
+            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
+            vertices.push_back({pos.x+1.0f, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
+            vertices.push_back({pos.x+1.0f, pos.y, pos.z+1.0f, norm[0], norm[1], norm[2], u1, v1});
+            vertices.push_back({pos.x, pos.y, pos.z+1.0f, norm[0], norm[1], norm[2], u0, v1});
             break;  
-
         case BOTTOM:
             norm[0] = 0.0f;
             norm[1] = -1.0f;
             norm[2] = 0.0f;
-            vertices.push_back({Pos[0], Pos[1], Pos[2], norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({Pos[0]+1, Pos[1], Pos[2], norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({Pos[0]+1, Pos[1], Pos[2]+1, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({Pos[0], Pos[1], Pos[2]+1, norm[0], norm[1], norm[2], u0, v1});
+            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
+            vertices.push_back({pos.x+1, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
+            vertices.push_back({pos.x+1, pos.y, pos.z+1, norm[0], norm[1], norm[2], u1, v1});
+            vertices.push_back({pos.x, pos.y, pos.z+1, norm[0], norm[1], norm[2], u0, v1});
             break;  
-
         case RIGHT:
-            Pos[0] += 1.0f;
+            pos.x += 1.0f;
             norm[0] = 1.0f;
             norm[1] = 0.0f;
             norm[2] = 0.0f;
-            vertices.push_back({Pos[0], Pos[1],   Pos[2],   norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({Pos[0], Pos[1]+1, Pos[2],   norm[0], norm[1], norm[2], u0, v1});
-            vertices.push_back({Pos[0], Pos[1]+1, Pos[2]+1, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({Pos[0], Pos[1],   Pos[2]+1, norm[0], norm[1], norm[2], u1, v0}); 
+            vertices.push_back({pos.x, pos.y,   pos.z,   norm[0], norm[1], norm[2], u0, v0});
+            vertices.push_back({pos.x, pos.y+1, pos.z,   norm[0], norm[1], norm[2], u0, v1});
+            vertices.push_back({pos.x, pos.y+1, pos.z+1, norm[0], norm[1], norm[2], u1, v1});
+            vertices.push_back({pos.x, pos.y,   pos.z+1, norm[0], norm[1], norm[2], u1, v0});
             break;  
-
         case LEFT:
             norm[0] = -1.0f;
             norm[1] = 0.0f;
             norm[2] = 0.0f;
-            vertices.push_back({Pos[0], Pos[1],   Pos[2],   norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({Pos[0], Pos[1]+1, Pos[2],   norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({Pos[0], Pos[1]+1, Pos[2]+1, norm[0], norm[1], norm[2], u0, v1});
-            vertices.push_back({Pos[0], Pos[1],   Pos[2]+1, norm[0], norm[1], norm[2], u0, v0});
-            break; 
-
+            vertices.push_back({pos.x, pos.y,   pos.z,   norm[0], norm[1], norm[2], u1, v0});
+            vertices.push_back({pos.x, pos.y+1, pos.z,   norm[0], norm[1], norm[2], u1, v1});
+            vertices.push_back({pos.x, pos.y+1, pos.z+1, norm[0], norm[1], norm[2], u0, v1});
+            vertices.push_back({pos.x, pos.y,   pos.z+1, norm[0], norm[1], norm[2], u0, v0});
+            break;
         case FRONT:
-            Pos[2] += 1.0f;
+            pos.z += 1.0f;
             norm[0] = 0.0f;
             norm[1] = 0.0f;
             norm[2] = 1.0f;
-            vertices.push_back({Pos[0], Pos[1], Pos[2], norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({Pos[0]+1, Pos[1], Pos[2], norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({Pos[0]+1, Pos[1]+1, Pos[2], norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({Pos[0], Pos[1]+1, Pos[2], norm[0], norm[1], norm[2], u0, v1});
+            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
+            vertices.push_back({pos.x+1.0f, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
+            vertices.push_back({pos.x+1.0f, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u1, v1});
+            vertices.push_back({pos.x, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u0, v1});
             break;  
         case BACK:
             norm[0] = 0.0f;
             norm[1] = 0.0f;
             norm[2] = -1.0f;
-            vertices.push_back({Pos[0], Pos[1], Pos[2], norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({Pos[0]+1, Pos[1], Pos[2], norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({Pos[0]+1, Pos[1]+1, Pos[2], norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({Pos[0], Pos[1]+1, Pos[2], norm[0], norm[1], norm[2], u0, v1});
+            vertices.push_back({pos.x+1.0f, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
+            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
+            vertices.push_back({pos.x, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u1, v1});
+            vertices.push_back({pos.x+1.0f, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u0, v1});
             break;  
 
         default: assert(false && "unknow face to add");
@@ -309,13 +273,4 @@ void Chunk::draw(Shader& shader)
     glm::mat4 model = glm::translate(glm::mat4(1.0f), world_pos);
     shader.set_uniform(model, "model");
     glDrawElements(GL_TRIANGLES, ebo.indices_count, GL_UNSIGNED_INT, 0);
-}
-
-Chunk::~Chunk()
-{
-    vao.~VAO();
-    vbo.~VBO();
-    ebo.~EBO();
-    vertices.clear();
-    indices.clear();
 }

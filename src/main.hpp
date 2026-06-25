@@ -46,6 +46,9 @@ class Game
         Texture *texture = nullptr;
         uint32_t seed = 0;
         glm::ivec2 last_chunk = {0, 0};
+        bool there_chunks_left_to_load = true;
+        bool there_chunks_left_to_unload = true;
+        bool there_chunks_left_to_create = true;
 
         Game();
         void game_loop();
@@ -55,6 +58,9 @@ class Game
         void calculate_camera_pos();
         void update();
         void save_chunk(glm::ivec2 pos);
+        void load_3chunks();
+        void unload_3chunks();
+        void create_chunks();
         void load_chunk(glm::ivec2 pos);
         void unload_far_chunks();
 };

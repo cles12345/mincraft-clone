@@ -65,7 +65,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
             }
         }
     }
-
+    
     glEnable(GL_DEPTH_TEST);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
@@ -84,7 +84,6 @@ void Game::game_loop()
 void Game::check_events()
 {
     bool moved = false;
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
         cam.move_forward(PLAYER_SPEED * delta_time);
@@ -136,6 +135,8 @@ void Game::check_events()
                     }
                 }
             }
+            there_chunks_left_to_load = true;
+            there_chunks_left_to_unload = true;
         }
     }
 }
@@ -167,7 +168,7 @@ void Game::update()
     cam.update(*shader);
 
     float light_color[3] = {1.0f, 1.0f, 1.0f};
-    float light_pos[3] = {cam.pos.x, 270.0f, cam.pos.z};
+    float light_pos[3] = {cam.pos.x, cam.pos.y, cam.pos.z};
 
     shader->set_uniform(light_color[0], light_color[1], light_color[2], "lightColor");
     shader->set_uniform(light_pos[0], light_pos[1], light_pos[2], "lightPos");
@@ -189,67 +190,10 @@ void Game::update()
         {
             chunk.draw(*shader);
         }
-
-        GLenum error;
-        while ((error = glGetError()) != GL_NO_ERROR)
-        {
-            std::cout << error << '\n';
-        }
     }
-
-    size_t loaded = 0;
-    while (!to_load.empty() && loaded < 3)
-    {
-        auto pos = to_load.back();
-
-        if(!chunks.count(pos))
-        {
-            chunks.try_emplace(pos, glm::vec3(pos.x, 0, pos.y));
-        }
-        
-        std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
-        
-        if (!utill::file_exist(path) && !chunks[pos].created_data)
-        {
-            chunks[pos].create_data(seed);
-            save_chunk(pos);
-        }
-        else if (!chunks[pos].created_data)
-        {
-            load_chunk(pos);
-        }
-        
-        chunks[pos].added_to_load = false;
-        
-        to_load.pop_back();
-        loaded++;
-    }
-
-    for (auto& [pos, chunk] : chunks)
-    {
-        if (chunk.created_data && chunk.dirty)
-        {
-            chunk.build_mesh(chunks); 
-        }
-    }
-
-    size_t unloaded = 0;
-    while (!to_unload.empty() && unloaded < 3)
-    {
-        auto pos = to_unload.back();
-        
-        if(chunks.count(pos))
-        {
-            std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
-            if (!utill::file_exist(path))
-            {
-                save_chunk(pos);
-            }
-            chunks.erase(pos);
-            unloaded++;
-        }
-        to_unload.pop_back();
-    }
+    load_3chunks();
+    create_chunks();
+    unload_3chunks();
 
     glfwSwapBuffers(window);
     glfwPollEvents(); 
@@ -260,6 +204,99 @@ void Game::save_chunk(glm::ivec2 pos)
     std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
     std::vector<uint8_t> data = utill::world_data_to_uint8(chunks[pos].data);
     utill::write_file_binary(path, data.data(), data.size() * sizeof(uint8_t));
+}
+
+void Game::load_3chunks()
+{
+    if (there_chunks_left_to_load)
+    {
+        size_t loaded = 0;
+        while (!to_load.empty() && loaded < 3)
+        {
+            auto pos = to_load.back();
+
+            if(!chunks.count(pos))
+            {
+                chunks.try_emplace(pos, glm::vec3(pos.x, 0, pos.y));
+            }
+            
+            std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
+            
+            if (!utill::file_exist(path) && !chunks[pos].created_data)
+            {
+                chunks[pos].create_data(seed);
+                save_chunk(pos);
+            }
+            else if (!chunks[pos].created_data)
+            {
+                load_chunk(pos);
+            }
+            
+            chunks[pos].added_to_load = false;
+            
+            to_load.pop_back();
+            loaded++;
+        }
+        if (loaded == 0)
+        {
+            there_chunks_left_to_load = false;
+        }
+        else
+        {
+            there_chunks_left_to_create = true;
+        }
+    }
+}
+
+void Game::unload_3chunks()
+{
+    if (there_chunks_left_to_unload)
+    {
+        size_t unloaded = 0;
+        while (!to_unload.empty() && unloaded < 3)
+        {
+            auto pos = to_unload.back();
+            
+            if(chunks.count(pos))
+            {
+                std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
+                if (!utill::file_exist(path))
+                {
+                    save_chunk(pos);
+                }
+                chunks.erase(pos);
+                unloaded++;
+            }
+
+            to_unload.pop_back();   
+        }
+
+        if (unloaded == 0)
+        {
+            there_chunks_left_to_unload = false;
+        }
+    }
+}
+
+void Game::create_chunks()
+{
+    if (there_chunks_left_to_create)
+    {
+        size_t created = 0;
+        for (auto& [pos, chunk] : chunks)
+        {
+            if (chunk.created_data && chunk.dirty)
+            {
+                chunk.build_mesh(chunks); 
+                created++;
+            }
+        }
+
+        if(created == 0)
+        {
+            there_chunks_left_to_create = false;
+        }
+    }
 }
 
 void Game::load_chunk(glm::ivec2 pos)

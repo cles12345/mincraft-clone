@@ -12,8 +12,8 @@ uniform vec3 viewPos;
 void main()
 {
     // Hardcoded material
-    vec3 ambientColor  = vec3(0.3, 0.3, 0.3);
-    vec3 diffuseColor  = vec3(0.6, 0.6, 0.6);
+    vec3 ambientColor  = vec3(0.6, 0.6, 0.6);
+    vec3 diffuseColor  = vec3(0.1, 0.1, 0.1);
     vec3 specularColor = vec3(0.2, 0.2, 0.2);
     float shininess    = 16.0;
 

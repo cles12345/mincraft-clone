@@ -139,6 +139,40 @@ void Game::check_events()
             there_chunks_left_to_unload = true;
         }
     }
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+{
+    glm::vec3 pos = cam.pos;
+    for (size_t i = 0; i <= 4; i++)
+    {
+        pos += cam.direction;
+
+        glm::ivec2 current_chunk(utill::world_pos_to_chunk_index(pos));
+        glm::ivec2 chunk_key(current_chunk.x * CHUNK_WIDTH, current_chunk.y * CHUNK_DEPTH);
+
+        if (!chunks.count(chunk_key) || !chunks[chunk_key].created_data)
+        {
+            continue;
+        }
+        
+        glm::vec3 local_pos(utill::world_pos_to_chunk_pos(pos, current_chunk));
+
+        if (local_pos.x < 0 || local_pos.x >= CHUNK_WIDTH ||
+            local_pos.y < 0 || local_pos.y >= CHUNK_HEIGHT ||
+            local_pos.z < 0 || local_pos.z >= CHUNK_DEPTH)
+        {
+            continue;
+        }
+
+        if(chunks[chunk_key].data[(int)local_pos.x][(int)local_pos.z][(int)local_pos.y] != BlockType::NONE)
+        {
+            chunks[chunk_key].data[(int)local_pos.x][(int)local_pos.z][(int)local_pos.y] = BlockType::NONE;
+            chunks[chunk_key].dirty = true;
+            there_chunks_left_to_create = true;
+            break;
+        }
+    }
+}
 }
 
 void Game::clear()
@@ -357,5 +391,19 @@ namespace utill
             }
         }
         return vector;
+    }
+
+    inline glm::vec3 world_pos_to_chunk_pos(glm::vec3 pos, glm::ivec2 current_chunk)
+    {
+        int local_x = (int)(std::floor(pos.x)) - (current_chunk.x * CHUNK_WIDTH);
+        int local_z = (int)(std::floor(pos.z)) - (current_chunk.y * CHUNK_DEPTH);
+        int local_y = (int)(std::floor(pos.y));
+        return glm::ivec3(local_x, local_y, local_z);
+    }
+    inline glm::ivec2 world_pos_to_chunk_index(glm::vec3 pos)
+    {
+        int chunk_x = (int)std::floor(pos.x / CHUNK_WIDTH);
+        int chunk_z = (int)std::floor(pos.z / CHUNK_DEPTH);
+        return glm::ivec2(chunk_x, chunk_z);
     }
 }

@@ -30,6 +30,8 @@ constexpr int RENDER_DISTANCE = RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH;
 namespace utill
 {
     std::vector<uint8_t> world_data_to_uint8(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT]);
+    inline glm::vec3 world_pos_to_chunk_pos(glm::vec3 pos, glm::ivec2 current_chunk);
+    inline glm::ivec2 world_pos_to_chunk_index(glm::vec3 pos);
 }
 
 class Game

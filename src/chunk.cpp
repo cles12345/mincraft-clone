@@ -58,6 +58,7 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 
     vertices.clear();
     indices.clear();
+    vao.count = 0;
     Chunk* right = &chunks[pos_r];
     Chunk* left  = &chunks[pos_l];
     Chunk* front = &chunks[pos_f];

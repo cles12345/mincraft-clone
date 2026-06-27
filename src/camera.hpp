@@ -1,5 +1,6 @@
 #pragma once
 #include "shader.hpp"
+#include "utill.hpp"
 #include <glfw3.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -7,6 +8,16 @@
 
 #define BLOCK_MAX 100000.0f
 #define BLOCK_MIN 0.1f
+
+namespace utill
+{
+    inline bool is_look_left(glm::vec3 direction) {return direction.x < 0.0f;};
+    inline bool is_look_right(glm::vec3 direction) {return direction.x > 0.0f;};
+    inline bool is_look_up(glm::vec3 direction) {return direction.y > 0.0f;};
+    inline bool is_look_down(glm::vec3 direction) {return direction.y < 0.0f;};
+    inline bool is_look_front(glm::vec3 direction) {return direction.z > 0.0f;};
+    inline bool is_look_back(glm::vec3 direction) {return direction.z < 0.0f;};
+};
 
 class Camera
 {

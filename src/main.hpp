@@ -65,4 +65,5 @@ class Game
         void create_chunks();
         void load_chunk(glm::ivec2 pos);
         void unload_far_chunks();
+        bool change_block(int i, BlockType type);
 };

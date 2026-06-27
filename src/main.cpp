@@ -66,6 +66,9 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
         }
     }
     
+    there_chunks_left_to_load = true;
+    there_chunks_left_to_unload = true;
+
     glEnable(GL_DEPTH_TEST);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
@@ -141,38 +144,138 @@ void Game::check_events()
     }
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-{
-    glm::vec3 pos = cam.pos;
-    for (size_t i = 0; i <= 4; i++)
     {
-        pos += cam.direction;
-
-        glm::ivec2 current_chunk(utill::world_pos_to_chunk_index(pos));
-        glm::ivec2 chunk_key(current_chunk.x * CHUNK_WIDTH, current_chunk.y * CHUNK_DEPTH);
-
-        if (!chunks.count(chunk_key) || !chunks[chunk_key].created_data)
+        for (int i = 4; i >= 0; i--)
         {
-            continue;
-        }
-        
-        glm::vec3 local_pos(utill::world_pos_to_chunk_pos(pos, current_chunk));
+            glm::vec3 pos = cam.pos + cam.direction * (float)i;
 
-        if (local_pos.x < 0 || local_pos.x >= CHUNK_WIDTH ||
-            local_pos.y < 0 || local_pos.y >= CHUNK_HEIGHT ||
-            local_pos.z < 0 || local_pos.z >= CHUNK_DEPTH)
-        {
-            continue;
-        }
+            glm::ivec2 current_chunk(utill::world_pos_to_chunk_index(pos));
+            glm::ivec2 chunk_key(current_chunk.x * CHUNK_WIDTH, current_chunk.y * CHUNK_DEPTH);
 
-        if(chunks[chunk_key].data[(int)local_pos.x][(int)local_pos.z][(int)local_pos.y] != BlockType::NONE)
-        {
-            chunks[chunk_key].data[(int)local_pos.x][(int)local_pos.z][(int)local_pos.y] = BlockType::NONE;
-            chunks[chunk_key].dirty = true;
-            there_chunks_left_to_create = true;
-            break;
+            if (!chunks.count(chunk_key) || !chunks[chunk_key].created_data)
+            {
+                continue;
+            }
+            
+            glm::vec3 local_pos(utill::world_pos_to_chunk_pos(pos, current_chunk));
+
+            int block_x = (int)std::floor(local_pos.x);
+            int block_y = (int)std::floor(local_pos.y);
+            int block_z = (int)std::floor(local_pos.z);
+
+            if (block_x < 0 || block_x >= CHUNK_WIDTH ||
+                block_y < 0 || block_y >= CHUNK_HEIGHT ||
+                block_z < 0 || block_z >= CHUNK_DEPTH)
+            {
+                continue;
+            }
+
+            if(utill::is_breakable(chunks[chunk_key].data[block_x][block_z][block_y]))
+            {
+                glm::ivec2 cam_chunk_idx = utill::world_pos_to_chunk_index(cam.pos);
+                glm::vec3 local_cam_pos = utill::world_pos_to_chunk_pos(cam.pos, cam_chunk_idx);
+
+                if (cam_chunk_idx != current_chunk) {
+                    local_cam_pos.x += (cam_chunk_idx.x - current_chunk.x) * CHUNK_WIDTH;
+                    local_cam_pos.z += (cam_chunk_idx.y - current_chunk.y) * CHUNK_DEPTH;
+                }
+
+                float t_target_x = (cam.direction.x > 0) ? ((float)block_x - local_cam_pos.x) / cam.direction.x 
+                                                        : ((float)(block_x + 1) - local_cam_pos.x) / cam.direction.x;
+
+                float t_target_y = (cam.direction.y > 0) ? ((float)block_y - local_cam_pos.y) / cam.direction.y 
+                                                        : ((float)(block_y + 1) - local_cam_pos.y) / cam.direction.y;
+
+                float t_target_z = (cam.direction.z > 0) ? ((float)block_z - local_cam_pos.z) / cam.direction.z 
+                                                        : ((float)(block_z + 1) - local_cam_pos.z) / cam.direction.z;
+
+                glm::ivec3 hit_normal;
+                if (t_target_x > t_target_y && t_target_x > t_target_z) 
+                {
+                    hit_normal = utill::is_look_right(cam.direction) ? glm::ivec3(-1, 0, 0) : glm::ivec3(1, 0, 0);
+                } 
+                else if (t_target_y > t_target_x && t_target_y > t_target_z) 
+                {
+                    hit_normal = utill::is_look_up(cam.direction) ? glm::ivec3(0, -1, 0) : glm::ivec3(0, 1, 0);
+                } 
+                else 
+                {
+                    hit_normal = utill::is_look_front(cam.direction) ? glm::ivec3(0, 0, -1) : glm::ivec3(0, 0, 1);
+                }
+
+                int target_x = block_x + hit_normal.x;
+                int target_y = block_y + hit_normal.y;
+                int target_z = block_z + hit_normal.z;
+
+                bool can_break = false;
+                if (target_x >= 0 && target_x < CHUNK_WIDTH &&
+                    target_y >= 0 && target_y < CHUNK_HEIGHT &&
+                    target_z >= 0 && target_z < CHUNK_DEPTH)
+                {
+                    if (!utill::is_breakable(chunks[chunk_key].data[target_x][target_z][target_y]))
+                    {
+                        can_break = true;
+                    }
+                }
+                else
+                {
+                    can_break = true;
+                }
+
+                if (can_break)
+                {
+                    chunks[chunk_key].data[block_x][block_z][block_y] = BlockType::NONE;
+                    chunks[chunk_key].dirty = true;
+                    
+                    if (block_x == 0) 
+                    {
+                        glm::ivec2 key(chunk_key.x - CHUNK_WIDTH, chunk_key.y);
+                        if (chunks.count(key)) chunks[key].dirty = true;
+                    }
+                    if (block_x == CHUNK_WIDTH - 1) 
+                    {
+                        glm::ivec2 key(chunk_key.x + CHUNK_WIDTH, chunk_key.y);
+                        if (chunks.count(key)) chunks[key].dirty = true;
+                    }
+                    if (block_z == 0) 
+                    {
+                        glm::ivec2 key(chunk_key.x, chunk_key.y - CHUNK_DEPTH);
+                        if (chunks.count(key)) chunks[key].dirty = true;
+                    }
+                    if (block_z == CHUNK_DEPTH - 1) 
+                    {
+                        glm::ivec2 key(chunk_key.x, chunk_key.y + CHUNK_DEPTH);
+                        if (chunks.count(key)) chunks[key].dirty = true;
+                    }
+                    
+                    there_chunks_left_to_create = true;
+                    break;
+                }
+            }
         }
     }
-}
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+    {
+        for (int i = 4; i >= 0; i--)
+        {
+           if(change_block(i, BlockType::WATER_TYPE))
+           {
+                break;
+           }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    {
+        for (int i = 4; i >= 0; i--)
+        {
+           if(change_block(i, BlockType::GLASS_TYPE))
+           {
+                break;
+           }
+        }
+    }
 }
 
 void Game::clear()
@@ -212,6 +315,8 @@ void Game::update()
     std::string title = "FPS: " + std::to_string(fps);
     glfwSetWindowTitle(window, title.c_str());
 
+    
+    
     for (auto& [pos, chunk] : chunks)
     {
         if (!chunk.created_data && !chunk.added_to_load)
@@ -220,9 +325,17 @@ void Game::update()
             chunk.added_to_load = true;
         }
 
-        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && !chunk.dirty && chunk.created_data)
+        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && chunk.created_data)
         {
-            chunk.draw(*shader);
+            chunk.draw_opaque(*shader);
+        }
+    }
+
+    for (auto& [pos, chunk] : chunks)
+    {
+        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && chunk.created_data)
+        {
+            chunk.draw_transparent(*shader);
         }
     }
     load_3chunks();
@@ -265,6 +378,16 @@ void Game::load_3chunks()
             {
                 load_chunk(pos);
             }
+
+            glm::ivec2 right(pos.x + CHUNK_WIDTH, pos.y);
+            glm::ivec2 left(pos.x - CHUNK_WIDTH,  pos.y);
+            glm::ivec2 front(pos.x,               pos.y + CHUNK_DEPTH);
+            glm::ivec2 back(pos.x,                pos.y - CHUNK_DEPTH);
+
+            if (chunks.count(right)) chunks[right].dirty = true;
+            if (chunks.count(left))  chunks[left].dirty  = true;
+            if (chunks.count(front)) chunks[front].dirty = true;
+            if (chunks.count(back))  chunks[back].dirty  = true;
             
             chunks[pos].added_to_load = false;
             
@@ -373,6 +496,53 @@ void Game::unload_far_chunks()
     }
 }
 
+bool Game::change_block(int i, BlockType type)
+{
+    glm::vec3 pos = cam.pos + cam.direction * (float)i;
+
+    glm::ivec2 current_chunk(utill::world_pos_to_chunk_index(pos));
+    glm::ivec2 chunk_key(current_chunk.x * CHUNK_WIDTH, current_chunk.y * CHUNK_DEPTH);
+
+    if (!chunks.count(chunk_key) || !chunks[chunk_key].created_data)
+    {
+        return false;
+    }
+            
+    glm::vec3 local_pos(utill::world_pos_to_chunk_pos(pos, current_chunk));
+
+    if (local_pos.x < 0 || local_pos.x >= CHUNK_WIDTH ||
+            local_pos.y < 0 || local_pos.y >= CHUNK_HEIGHT ||
+            local_pos.z < 0 || local_pos.z >= CHUNK_DEPTH)
+    {
+        return false;
+    }
+
+    chunks[chunk_key].data[(int)local_pos.x][(int)local_pos.z][(int)local_pos.y] = type;
+    chunks[chunk_key].dirty = true;
+    if ((int)local_pos.x == 0) 
+    {
+        glm::ivec2 key(chunk_key.x - CHUNK_WIDTH, chunk_key.y);
+        if (chunks.count(key)) chunks[key].dirty = true;
+    }
+    if ((int)local_pos.x == CHUNK_WIDTH - 1) 
+    {
+        glm::ivec2 key(chunk_key.x + CHUNK_WIDTH, chunk_key.y);
+        if (chunks.count(key)) chunks[key].dirty = true;
+    }
+    if ((int)local_pos.z == 0) 
+    {
+        glm::ivec2 key(chunk_key.x, chunk_key.y - CHUNK_DEPTH);
+        if (chunks.count(key)) chunks[key].dirty = true;
+    }
+    if ((int)local_pos.z == CHUNK_DEPTH - 1) 
+    {
+        glm::ivec2 key(chunk_key.x, chunk_key.y + CHUNK_DEPTH);
+        if (chunks.count(key)) chunks[key].dirty = true;
+    }
+    there_chunks_left_to_create = true;
+    return true;
+}
+
 namespace utill
 {
     std::vector<uint8_t> world_data_to_uint8(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT])
@@ -398,7 +568,7 @@ namespace utill
         int local_x = (int)(std::floor(pos.x)) - (current_chunk.x * CHUNK_WIDTH);
         int local_z = (int)(std::floor(pos.z)) - (current_chunk.y * CHUNK_DEPTH);
         int local_y = (int)(std::floor(pos.y));
-        return glm::ivec3(local_x, local_y, local_z);
+        return glm::vec3(local_x, local_y, local_z);
     }
     inline glm::ivec2 world_pos_to_chunk_index(glm::vec3 pos)
     {

@@ -8,6 +8,7 @@
 #include "vbo.hpp"  
 #include "ebo.hpp"
 #include "shader.hpp"
+#include "utill.hpp"
 #include "FastNoiseLite.h"
 
 constexpr int CHUNK_WIDTH = 16;
@@ -33,18 +34,30 @@ enum BlockType : uint8_t
     GRASS_TYPE,
     STONE_TYPE,
     DIRT_TYPE,
-    WATER_TYPE
+    WATER_TYPE,
+    GLASS_TYPE
 };
 
+namespace utill
+{
+    inline bool is_transparent(BlockType type);
+    inline bool should_reveal_face(BlockType current, BlockType neighbor);
+    bool is_breakable(BlockType type);
+}
 class Chunk
 {
     public:
         BlockType data[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT] = {NONE};
-        std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
-        VAO vao = VAO(sizeof(Vertex));
-        VBO vbo;
-        EBO ebo;
+        std::vector<Vertex> vertices_opaque;
+        std::vector<unsigned int> indices_opaque;
+        std::vector<Vertex> vertices_transparent;
+        std::vector<unsigned int> indices_transparent;
+        VAO vao_opaque = VAO(sizeof(Vertex));
+        VBO vbo_opaque;
+        EBO ebo_opaque;
+        VAO vao_transparent = VAO(sizeof(Vertex));
+        VBO vbo_transparent;
+        EBO ebo_transparent;
         glm::vec3 world_pos = glm::vec3(0, 0, 0);
         bool dirty = false;
         bool created_data = false;
@@ -57,6 +70,7 @@ class Chunk
         void build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks);
         void add_face(Face face, glm::vec3 pos);
         std::array<float, 2> get_tile(Face face, BlockType type);
-        void draw(Shader& shader);
+        void draw_opaque(Shader& shader);
+        void draw_transparent(Shader& shader);
         ~Chunk() = default;
 };

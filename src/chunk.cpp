@@ -247,10 +247,10 @@ std::array<float, 2> Chunk::get_tile(Face face, BlockType type)
 
     switch (type)
     {
-    case STONE_TYPE:
+    case BlockType::STONE_TYPE:
         tile_index = 3;
         break;
-    case GRASS_TYPE:
+    case BlockType::GRASS_TYPE:
         if (face == TOP)
         {
             tile_index = 1;
@@ -263,14 +263,17 @@ std::array<float, 2> Chunk::get_tile(Face face, BlockType type)
         }
         tile_index = 0;
         break;
-    case DIRT_TYPE:
+    case BlockType::DIRT_TYPE:
         tile_index = 2;
         break;
-    case WATER_TYPE:
+    case BlockType::WATER_TYPE:
         tile_index = 4;
         break;
-    case GLASS_TYPE:
+    case BlockType::GLASS_TYPE:
         tile_index = 5;
+        break;
+    case BlockType::SAND_TYPE:
+        tile_index = 6;
         break;
     
     default: assert(false && "invalid type to get the tile");

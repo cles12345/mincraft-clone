@@ -35,7 +35,8 @@ enum BlockType : uint8_t
     STONE_TYPE,
     DIRT_TYPE,
     WATER_TYPE,
-    GLASS_TYPE
+    GLASS_TYPE,
+    SAND_TYPE
 };
 
 namespace utill

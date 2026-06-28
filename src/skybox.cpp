@@ -2,59 +2,44 @@
 
 Skybox::Skybox()
 {
-    // Vertices (24 unique vertices)
-    float vertices[] = {
-        // positions
-        // Right (+X)
+    float vertices[] = {    
         1.0f,  1.0f,  1.0f,
         1.0f, -1.0f,  1.0f,
         1.0f,  1.0f, -1.0f,
         1.0f, -1.0f, -1.0f,
-        // Left (-X)
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
         -1.0f,  1.0f,  1.0f,
         -1.0f, -1.0f,  1.0f,
-        // Top (+Y)
         1.0f,  1.0f, -1.0f,
         1.0f,  1.0f,  1.0f,
         -1.0f,  1.0f, -1.0f,
         -1.0f,  1.0f,  1.0f,
-        // Bottom (-Y)
         -1.0f, -1.0f, -1.0f,
         -1.0f, -1.0f,  1.0f,
         1.0f, -1.0f, -1.0f,
         1.0f, -1.0f,  1.0f,
-        // Front (+Z)
         -1.0f, -1.0f,  1.0f,
         -1.0f,  1.0f,  1.0f,
         1.0f, -1.0f,  1.0f,
         1.0f,  1.0f,  1.0f,
-        // Back (-Z)
         1.0f, -1.0f, -1.0f,
         1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
         -1.0f,  1.0f, -1.0f,
     };
 
-    // Indices (36 triangles)
     unsigned int indices[] = {
-        // Right
         0, 1, 2,
         1, 3, 2,
-        // Left
         4, 5, 6,
         5, 7, 6,
-        // Top
         8, 9, 10,
         9, 11, 10,
-        // Bottom
         12, 13, 14,
         13, 15, 14,
-        // Front
         16, 17, 18,
         17, 19, 18,
-        // Back
         20, 21, 22,
         21, 23, 22,
     };

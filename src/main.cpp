@@ -45,7 +45,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     }
 
     shader = new Shader("shaders/shader.vert", "shaders/shader.frag");
-    texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
     skybox = new Skybox;
     last_frame = glfwGetTime();
 
@@ -272,6 +272,17 @@ void Game::check_events()
         for (int i = 4; i >= 0; i--)
         {
            if(change_block(i, BlockType::GLASS_TYPE))
+           {
+                break;
+           }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    {
+        for (int i = 4; i >= 0; i--)
+        {
+           if(change_block(i, BlockType::SAND_TYPE))
            {
                 break;
            }

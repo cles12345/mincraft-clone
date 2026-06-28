@@ -17,6 +17,7 @@ class VBO
         VBO(const float vertices[], size_t vertex_size);
         VBO();
         void send_buffer(const Vertex vertices[], unsigned int elements);
+        void send_buffer(const float vertices[], size_t size);
         void bind();
         ~VBO();
 };

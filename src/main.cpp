@@ -15,7 +15,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, false);
 
-    window = glfwCreateWindow(800.0f, 600.0f, "game", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "game", NULL, NULL);
 
     if (window == NULL)
     {
@@ -46,6 +46,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
 
     shader = new Shader("shaders/shader.vert", "shaders/shader.frag");
     texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST);
+    skybox = new Skybox;
     last_frame = glfwGetTime();
 
     cam.pos = glm::vec3(0.0f, 200.0f, 0.0f);
@@ -315,8 +316,6 @@ void Game::update()
     std::string title = "FPS: " + std::to_string(fps);
     glfwSetWindowTitle(window, title.c_str());
 
-    
-    
     for (auto& [pos, chunk] : chunks)
     {
         if (!chunk.created_data && !chunk.added_to_load)
@@ -330,6 +329,8 @@ void Game::update()
             chunk.draw_opaque(*shader);
         }
     }
+
+    skybox->draw(cam);
 
     for (auto& [pos, chunk] : chunks)
     {
@@ -541,6 +542,13 @@ bool Game::change_block(int i, BlockType type)
     }
     there_chunks_left_to_create = true;
     return true;
+}
+
+Game::~Game()
+{
+    delete shader;
+    delete texture;
+    delete skybox;
 }
 
 namespace utill

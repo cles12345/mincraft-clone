@@ -2,6 +2,9 @@
 
 Camera::Camera(float fov, float width, float height)
 {
+    this->fov = fov;
+    this->width = width;
+    this->height = height;
     projection = glm::perspective(glm::radians(fov), width / height, BLOCK_MIN, BLOCK_MAX);
 }
 

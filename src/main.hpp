@@ -21,6 +21,7 @@
 #include "vbo.hpp"
 #include "ebo.hpp"
 #include "utill.hpp"
+#include "skybox.hpp"
 
 constexpr float PLAYER_SPEED = 20.0f;
 
@@ -39,6 +40,7 @@ class Game
     public:
         GLFWwindow* window = nullptr;
         Shader *shader = nullptr;
+        Skybox *skybox = nullptr;
         Camera cam;
         float delta_time = 0;
         float last_frame = 0;
@@ -66,4 +68,5 @@ class Game
         void load_chunk(glm::ivec2 pos);
         void unload_far_chunks();
         bool change_block(int i, BlockType type);
+        ~Game();
 };

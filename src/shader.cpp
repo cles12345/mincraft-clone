@@ -90,6 +90,13 @@ void Shader::set_uniform(const glm::mat4& value, const char* uniform_name)
     glUniformMatrix4fv(uniform_location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
+void Shader::set_uniform(int value, const char* uniform_name)
+{
+    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
+    glUseProgram(shader_program);
+    glUniform1i(uniform_location, value);
+}
+
 Shader::~Shader()
 {
     glDeleteShader(vertex_shader);

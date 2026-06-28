@@ -151,6 +151,7 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
     ebo_transparent.send_buffer(indices_transparent.data(), indices_transparent.size() * sizeof(unsigned int));
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     dirty = false;

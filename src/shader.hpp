@@ -25,6 +25,7 @@ class Shader
         void set_uniform(float value1, float value2, const char* uniform_name);
         void set_uniform(float value1, float value2, float value3, const char* uniform_name);
         void set_uniform(float value1, float value2, float value3, float value4, const char* uniform_name);
+        void set_uniform(int value, const char* uniform_name);
         void set_uniform(const glm::mat4& value, const char* uniform_name);
         ~Shader();
 };

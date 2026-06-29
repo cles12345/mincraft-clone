@@ -18,6 +18,9 @@ constexpr int CHUNK_DEPTH = 16;
 constexpr int ATLAS_COLS = 16;
 constexpr int ATLAS_ROWS = 16;
 
+constexpr int SEA_LEVEL = 62;
+constexpr int STONE_LEVEL = 5;
+
 enum Face : uint8_t
 {
     TOP,

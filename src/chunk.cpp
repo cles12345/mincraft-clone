@@ -13,29 +13,44 @@ void Chunk::create_data(int seed)
     memset(data, 0, sizeof(data));
 
     FastNoiseLite noise;
-
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Value);
+    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     noise.SetFrequency(0.01f);
+    noise.SetFractalOctaves(5);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(seed);
+
+    FastNoiseLite cave_noise;
+    cave_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    cave_noise.SetFrequency(0.05f);
+    cave_noise.SetSeed(seed + 1000);
 
     for (int x = 0; x < CHUNK_WIDTH; x++)
     {
         for (int z = 0; z < CHUNK_DEPTH; z++)
         {
-            float noise_value = noise.GetNoise((float)x + world_pos.x, (float)z + world_pos.z);
-            int height = (int)((noise_value + 1.0f) / 2.0f * CHUNK_HEIGHT);
+            float wx = world_pos.x + x;
+            float wz = world_pos.z + z;
+            
+            float height_val = noise.GetNoise(wx, wz);
+            int height = SEA_LEVEL + (int)(height_val * 25);
 
             if (height < 0) height = 0;
             if (height >= CHUNK_HEIGHT) height = CHUNK_HEIGHT - 1;
-
             for (int y = 0; y < CHUNK_HEIGHT; y++)
             {
-                if (y < height - 3)
+                float cave_val = cave_noise.GetNoise(wx, (float)y, wz);
+                if (cave_val > 0.3f)
+                    data[x][z][y] = BlockType::NONE;
+                else if(y < height - STONE_LEVEL)
                     data[x][z][y] = BlockType::STONE_TYPE;
                 else if (y < height)
+                {
                     data[x][z][y] = BlockType::DIRT_TYPE;
+                }
                 else if (y == height)
                     data[x][z][y] = BlockType::GRASS_TYPE;
+                else if (y <= SEA_LEVEL && y > height)
+                    data[x][z][y] = BlockType::WATER_TYPE;
                 else
                     data[x][z][y] = BlockType::NONE;
             }

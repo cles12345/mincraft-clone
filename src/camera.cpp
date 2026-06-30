@@ -47,6 +47,7 @@ glm::mat4 Camera::get_view()
 
 void Camera::update(Shader& shader)
 {
+    shader.use();
     view = get_view();
     shader.set_uniform(view, "view");
     shader.set_uniform(projection, "projection");

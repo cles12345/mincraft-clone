@@ -45,6 +45,9 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     }
 
     shader = new Shader("shaders/shader.vert", "shaders/shader.frag");
+#if ZPREPASS
+    zprepass_shader = new Shader("shaders/zprepass.vert", "shaders/zprepass.frag");
+#endif
     texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
     skybox = new Skybox;
     last_frame = glfwGetTime();
@@ -313,20 +316,36 @@ void Game::calculate_camera_pos()
 void Game::update()
 {
     check_events();
-    shader->use();
-    cam.update(*shader);
+    cam.update(*shader);   
 
     float light_color[3] = {1.0f, 1.0f, 1.0f};
     float light_pos[3] = {cam.pos.x, cam.pos.y, cam.pos.z};
-
-    shader->set_uniform(light_color[0], light_color[1], light_color[2], "lightColor");
-    shader->set_uniform(light_pos[0], light_pos[1], light_pos[2], "lightPos");
-    shader->set_uniform(cam.pos[0], cam.pos[1], cam.pos[2], "viewPos");
 
     float fps = 1.0f / delta_time;
     std::string title = "FPS: " + std::to_string(fps);
     glfwSetWindowTitle(window, title.c_str());
 
+    skybox->draw(cam);
+    
+#if ZPREPASS
+    glDepthFunc(GL_LESS);
+    glColorMask(0, 0, 0, 0);
+    cam.update(*zprepass_shader);
+
+    for (auto& [pos, chunk] : chunks)
+    {
+        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && chunk.created_data)
+        {
+            chunk.draw_opaque(*zprepass_shader);
+        }
+    }
+    glDepthFunc(GL_EQUAL);
+    glColorMask(1, 1, 1, 1);
+#endif
+    cam.update(*shader);
+    shader->set_uniform(light_color[0], light_color[1], light_color[2], "lightColor");
+    shader->set_uniform(light_pos[0], light_pos[1], light_pos[2], "lightPos");
+    shader->set_uniform(cam.pos[0], cam.pos[1], cam.pos[2], "viewPos");
     for (auto& [pos, chunk] : chunks)
     {
         if (!chunk.created_data && !chunk.added_to_load)
@@ -340,8 +359,7 @@ void Game::update()
             chunk.draw_opaque(*shader);
         }
     }
-
-    skybox->draw(cam);
+    glDepthFunc(GL_LESS);
 
     for (auto& [pos, chunk] : chunks)
     {
@@ -560,6 +578,9 @@ Game::~Game()
     delete shader;
     delete texture;
     delete skybox;
+#if ZPREPASS
+    delete zprepass_shader;
+#endif
 }
 
 namespace utill

@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include "shader.hpp"
@@ -28,6 +29,8 @@ constexpr float PLAYER_SPEED = 20.0f;
 constexpr int RENDER_DISTANCE_CHUNKS = 20;
 constexpr int RENDER_DISTANCE = RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH;
 
+#define ZPREPASS 1
+
 namespace utill
 {
     std::vector<uint8_t> world_data_to_uint8(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT]);
@@ -40,6 +43,9 @@ class Game
     public:
         GLFWwindow* window = nullptr;
         Shader *shader = nullptr;
+#if ZPREPASS
+        Shader *zprepass_shader = nullptr;
+#endif
         Skybox *skybox = nullptr;
         Camera cam;
         float delta_time = 0;

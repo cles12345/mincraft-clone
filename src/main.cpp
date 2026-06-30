@@ -387,6 +387,13 @@ void Game::load_3chunks()
 {
     if (there_chunks_left_to_load)
     {
+        std::sort(to_load.begin(), to_load.end(),
+            [this](const glm::ivec2& a, const glm::ivec2& b) {
+                float distA = glm::distance(glm::vec3(a.x, cam.pos.y, a.y), cam.pos);
+                float distB = glm::distance(glm::vec3(b.x, cam.pos.y, b.y), cam.pos);
+                return distA > distB;
+            });
+
         size_t loaded = 0;
         while (!to_load.empty() && loaded < 3)
         {
@@ -442,6 +449,13 @@ void Game::unload_3chunks()
         size_t unloaded = 0;
         while (!to_unload.empty() && unloaded < 3)
         {
+            std::sort(to_unload.begin(), to_unload.end(),
+            [this](const glm::ivec2& a, const glm::ivec2& b) {
+                float distA = glm::distance(glm::vec3(a.x, cam.pos.y, a.y), cam.pos);
+                float distB = glm::distance(glm::vec3(b.x, cam.pos.y, b.y), cam.pos);
+                return distA < distB;
+            });
+
             auto pos = to_unload.back();
             
             if(chunks.count(pos))
@@ -469,17 +483,31 @@ void Game::create_chunks()
 {
     if (there_chunks_left_to_create)
     {
-        size_t created = 0;
+        std::vector<glm::ivec2> dirty_chunks;
         for (auto& [pos, chunk] : chunks)
         {
             if (chunk.created_data && chunk.dirty)
             {
-                chunk.build_mesh(chunks); 
-                created++;
+                dirty_chunks.push_back(pos);
             }
         }
 
-        if(created == 0)
+        std::sort(dirty_chunks.begin(), dirty_chunks.end(),
+            [this](const glm::ivec2& a, const glm::ivec2& b) {
+                float distA = glm::distance(glm::vec3(a.x, cam.pos.y, a.y), cam.pos);
+                float distB = glm::distance(glm::vec3(b.x, cam.pos.y, b.y), cam.pos);
+                return distA < distB;
+            });
+
+        size_t created = 0;
+        for (auto& pos : dirty_chunks)
+        {
+            if (created >= 3) break;
+            chunks[pos].build_mesh(chunks);
+            created++;
+        }
+
+        if (created == 0)
         {
             there_chunks_left_to_create = false;
         }

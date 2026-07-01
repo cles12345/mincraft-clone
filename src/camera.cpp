@@ -5,6 +5,11 @@ Camera::Camera(float fov, float width, float height)
     this->fov = fov;
     this->width = width;
     this->height = height;
+    
+    direction = glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f));
+    right = glm::normalize(glm::cross(direction, glm::vec3(0.0f, 1.0f, 0.0f)));
+    up = glm::normalize(glm::cross(right, direction));
+
     projection = glm::perspective(glm::radians(fov), width / height, BLOCK_MIN, BLOCK_MAX);
 }
 
@@ -38,6 +43,15 @@ void Camera::mouse_callback(double x, double y)
     direction.y = sin(glm::radians(pitch));
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     direction = glm::normalize(direction);
+
+    glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    right = glm::normalize(glm::cross(direction, world_up));
+    
+    if (glm::length(right) < 0.001f) {
+        right = glm::vec3(1.0f, 0.0f, 0.0f);
+    }
+    
+    up = glm::normalize(glm::cross(right, direction));
 }  
 
 glm::mat4 Camera::get_view() 
@@ -65,12 +79,12 @@ void Camera::move_backward(float speed)
 
 void Camera::move_right(float speed)
 {
-    pos += glm::normalize(glm::cross(direction, up)) * speed;
+    pos += speed * right;
 }
 
 void Camera::move_left(float speed)
 {
-    pos -= glm::normalize(glm::cross(direction, up)) * speed;
+    pos -= speed * right;
 }
 
 void Camera::move_up(float speed)

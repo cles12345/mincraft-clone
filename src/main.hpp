@@ -23,10 +23,11 @@
 #include "ebo.hpp"
 #include "utill.hpp"
 #include "skybox.hpp"
+#include "frustum.hpp"
 
 constexpr float PLAYER_SPEED = 20.0f;
 
-constexpr int RENDER_DISTANCE_CHUNKS = 20;
+constexpr int RENDER_DISTANCE_CHUNKS = 30;
 constexpr int RENDER_DISTANCE = RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH;
 
 #define ZPREPASS 1
@@ -42,6 +43,7 @@ class Game
 {
     public:
         GLFWwindow* window = nullptr;
+        Frustum frustum;
         Shader *shader = nullptr;
 #if ZPREPASS
         Shader *zprepass_shader = nullptr;
@@ -59,6 +61,7 @@ class Game
         bool there_chunks_left_to_load = true;
         bool there_chunks_left_to_unload = true;
         bool there_chunks_left_to_create = true;
+        BlockType current_block = GLASS_TYPE;
 
         Game();
         void game_loop();

@@ -122,6 +122,19 @@ void Game::check_events()
         moved = true;
     }
 
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+        current_block = BlockType::GRASS_TYPE;
+    else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        current_block = BlockType::DIRT_TYPE;
+    else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+        current_block = BlockType::STONE_TYPE;
+    else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+        current_block = BlockType::WATER_TYPE;
+    else if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+        current_block = BlockType::SAND_TYPE;
+    else if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
+        current_block = BlockType::GLASS_TYPE;
+
     if (moved)
     {
         glm::ivec2 current_chunk = {std::floor(cam.pos.x / CHUNK_WIDTH), std::floor(cam.pos.z / CHUNK_DEPTH)};
@@ -263,29 +276,7 @@ void Game::check_events()
     {
         for (int i = 4; i >= 0; i--)
         {
-           if(change_block(i, BlockType::WATER_TYPE))
-           {
-                break;
-           }
-        }
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-    {
-        for (int i = 4; i >= 0; i--)
-        {
-           if(change_block(i, BlockType::GLASS_TYPE))
-           {
-                break;
-           }
-        }
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-    {
-        for (int i = 4; i >= 0; i--)
-        {
-           if(change_block(i, BlockType::SAND_TYPE))
+           if(change_block(i, current_block))
            {
                 break;
            }
@@ -317,6 +308,7 @@ void Game::update()
 {
     check_events();
     cam.update(*shader);   
+    frustum.update(cam, RENDER_DISTANCE);
 
     float light_color[3] = {1.0f, 1.0f, 1.0f};
     float light_pos[3] = {cam.pos.x, cam.pos.y, cam.pos.z};
@@ -334,9 +326,13 @@ void Game::update()
 
     for (auto& [pos, chunk] : chunks)
     {
-        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && chunk.created_data)
+        if (chunk.created_data)
         {
-            chunk.draw_opaque(*zprepass_shader);
+            AABB box = {{chunk.world_pos}, {chunk.world_pos.x + CHUNK_WIDTH, chunk.world_pos.y + CHUNK_HEIGHT, chunk.world_pos.z + CHUNK_DEPTH}};
+            if (frustum.is_visable(box))
+            {
+                chunk.draw_opaque(*zprepass_shader);
+            }
         }
     }
     glDepthFunc(GL_EQUAL);
@@ -354,18 +350,26 @@ void Game::update()
             chunk.added_to_load = true;
         }
 
-        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && chunk.created_data)
+        if (chunk.created_data)
         {
-            chunk.draw_opaque(*shader);
+            AABB box = {{chunk.world_pos}, {chunk.world_pos.x + CHUNK_WIDTH, chunk.world_pos.y + CHUNK_HEIGHT, chunk.world_pos.z + CHUNK_DEPTH}};
+            if (frustum.is_visable(box))
+            {
+                chunk.draw_opaque(*shader);
+            }
         }
     }
     glDepthFunc(GL_LESS);
 
     for (auto& [pos, chunk] : chunks)
     {
-        if (glm::distance(glm::vec3(pos.x, cam.pos.y, pos.y), cam.pos) < RENDER_DISTANCE && chunk.created_data)
+        if (chunk.created_data)
         {
-            chunk.draw_transparent(*shader);
+            AABB box = {{chunk.world_pos}, {chunk.world_pos.x + CHUNK_WIDTH, chunk.world_pos.y + CHUNK_HEIGHT, chunk.world_pos.z + CHUNK_DEPTH}};
+            if (frustum.is_visable(box))
+            {
+                chunk.draw_transparent(*shader);
+            }
         }
     }
     load_3chunks();

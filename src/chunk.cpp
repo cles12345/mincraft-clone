@@ -12,17 +12,41 @@ void Chunk::create_data(int seed)
     dirty = true;
     memset(data, 0, sizeof(data));
 
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetFrequency(0.01f);
-    noise.SetFractalOctaves(5);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetSeed(seed);
+    static FastNoiseLite terrain_nois_3d;
+    static FastNoiseLite base_land_noise;
+    static FastNoiseLite cheese_cave_noise;
+    static FastNoiseLite spaghetti_cave_noise;
+    static FastNoiseLite water_cave_noise;
+    static int initialized_seed = -1;
 
-    FastNoiseLite cave_noise;
-    cave_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    cave_noise.SetFrequency(0.05f);
-    cave_noise.SetSeed(seed + 1000);
+    if (initialized_seed != seed)
+    {
+        initialized_seed = seed;
+        terrain_nois_3d.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        terrain_nois_3d.SetFrequency(0.02f);
+        terrain_nois_3d.SetFractalOctaves(5);
+        terrain_nois_3d.SetFractalType(FastNoiseLite::FractalType_FBm);
+        terrain_nois_3d.SetSeed(seed);
+
+        base_land_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        base_land_noise.SetFrequency(0.005f);
+        base_land_noise.SetFractalOctaves(5);
+        base_land_noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        base_land_noise.SetSeed(seed + 500);
+
+        cheese_cave_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        cheese_cave_noise.SetFrequency(0.025f);
+        cheese_cave_noise.SetSeed(seed + 1000);
+
+        spaghetti_cave_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        spaghetti_cave_noise.SetFrequency(0.03f);
+        spaghetti_cave_noise.SetFractalOctaves(1);
+        spaghetti_cave_noise.SetSeed(seed + 2000);
+
+        water_cave_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        water_cave_noise.SetFrequency(0.01f);
+        water_cave_noise.SetSeed(seed + 3000);
+    }
 
     for (int x = 0; x < CHUNK_WIDTH; x++)
     {
@@ -31,29 +55,84 @@ void Chunk::create_data(int seed)
             float wx = world_pos.x + x;
             float wz = world_pos.z + z;
             
-            float height_val = noise.GetNoise(wx, wz);
-            int height = SEA_LEVEL + (int)(height_val * 25);
+            float land_variation = base_land_noise.GetNoise(wx, wz) * 15.0f;
+            float local_sea_level = SEA_LEVEL + land_variation;
 
-            if (height < 0) height = 0;
-            if (height >= CHUNK_HEIGHT) height = CHUNK_HEIGHT - 1;
-            for (int y = 0; y < CHUNK_HEIGHT; y++)
+            float flood_chance = water_cave_noise.GetNoise(wx, wz);
+
+            int blocks_surface_depth = 0;
+
+            for (int y = CHUNK_HEIGHT - 1; y >= 1; y--)
             {
-                float cave_val = cave_noise.GetNoise(wx, (float)y, wz);
-                if (cave_val > 0.3f)
-                    data[x][z][y] = BlockType::NONE;
-                else if(y < height - STONE_LEVEL)
-                    data[x][z][y] = BlockType::STONE_TYPE;
-                else if (y < height)
+                float height_pull = local_sea_level - (float)y;
+                float noise3d = terrain_nois_3d.GetNoise(wx, (float)y, wz);
+                float final_density = height_pull + (noise3d * 10.0f);
+
+                if (final_density > 0.0f)
                 {
-                    data[x][z][y] = BlockType::DIRT_TYPE;
+                    bool is_cave = false;
+                    
+                    if (y < local_sea_level - 4)
+                    {
+                        float cheese_val = cheese_cave_noise.GetNoise(wx, (float)y, wz);
+                        
+                        float spaghetti_val = spaghetti_cave_noise.GetNoise(wx, (float)y, wz);
+                        bool is_spaghetti = std::abs(spaghetti_val) < 0.08f;
+
+                        if (cheese_val > 0.50f || is_spaghetti)
+                        {
+                            is_cave = true;
+                        }
+                    }
+
+                    if (is_cave)
+                    {
+                        blocks_surface_depth = 0;
+
+                        if (y <= SEA_LEVEL - 8 && flood_chance > 0.4f)
+                            data[x][z][y] = BlockType::WATER_TYPE;
+                        else
+                            data[x][z][y] = BlockType::NONE;
+                    }
+                    else 
+                    {
+                        bool is_beach_zone = (y <= SEA_LEVEL + 2 && y >= SEA_LEVEL - 3);
+
+                        if (blocks_surface_depth == 0)
+                        {
+                            if (is_beach_zone)
+                                data[x][z][y] = BlockType::SAND_TYPE;
+                            else if (y > SEA_LEVEL)
+                                data[x][z][y] = BlockType::GRASS_TYPE;
+                            else
+                                data[x][z][y] = BlockType::STONE_TYPE;
+                        }
+                        else if (blocks_surface_depth < DIRT_LEVEL)
+                        {
+                            if (is_beach_zone)
+                                data[x][z][y] = BlockType::SAND_TYPE;
+                            else if (y > SEA_LEVEL)
+                                data[x][z][y] = BlockType::DIRT_TYPE;
+                            else
+                                data[x][z][y] = BlockType::STONE_TYPE;
+                        }
+                        else
+                            data[x][z][y] = BlockType::STONE_TYPE;
+
+                        blocks_surface_depth++;
+                    }
                 }
-                else if (y == height)
-                    data[x][z][y] = BlockType::GRASS_TYPE;
-                else if (y <= SEA_LEVEL && y > height)
-                    data[x][z][y] = BlockType::WATER_TYPE;
                 else
-                    data[x][z][y] = BlockType::NONE;
+                {
+                    blocks_surface_depth = 0;
+                    if (y <= SEA_LEVEL)
+                        data[x][z][y] = BlockType::WATER_TYPE;
+                    else
+                        data[x][z][y] = BlockType::NONE;
+                }
             }
+
+            data[x][z][0] = BlockType::BEDROCK_TYPE;
         }
     }
     created_data = true;
@@ -290,6 +369,9 @@ std::array<float, 2> Chunk::get_tile(Face face, BlockType type)
     case BlockType::SAND_TYPE:
         tile_index = 6;
         break;
+    case BlockType::BEDROCK_TYPE:
+        tile_index = 7;
+        break;
     
     default: assert(false && "invalid type to get the tile");
     }
@@ -355,6 +437,7 @@ namespace utill
         {
             case BlockType::NONE: return false;
             case BlockType::WATER_TYPE: return false;
+            case BlockType::BEDROCK_TYPE: return false;
             default: return true;
         }
     }

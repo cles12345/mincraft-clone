@@ -9,7 +9,10 @@
 #include "ebo.hpp"
 #include "shader.hpp"
 #include "utill.hpp"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
 #include "FastNoiseLite.h"
+#pragma GCC diagnostic pop
 
 constexpr int CHUNK_WIDTH = 16;
 constexpr int CHUNK_HEIGHT = 256;
@@ -19,7 +22,7 @@ constexpr int ATLAS_COLS = 16;
 constexpr int ATLAS_ROWS = 16;
 
 constexpr int SEA_LEVEL = 62;
-constexpr int STONE_LEVEL = 5;
+constexpr int DIRT_LEVEL = 4;
 
 enum Face : uint8_t
 {
@@ -39,7 +42,8 @@ enum BlockType : uint8_t
     DIRT_TYPE,
     WATER_TYPE,
     GLASS_TYPE,
-    SAND_TYPE
+    SAND_TYPE,
+    BEDROCK_TYPE
 };
 
 namespace utill

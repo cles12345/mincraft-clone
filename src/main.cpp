@@ -372,9 +372,22 @@ void Game::update()
             }
         }
     }
-    load_3chunks();
+    if (to_load.size() < 20)
+        loaded_per_frame = 1;
+    else if (to_load.size() < 70)
+        loaded_per_frame = 2;   
+    else
+        loaded_per_frame = 3;
+        
+    if (to_unload.size() < 20)
+        unloaded_per_frame = 1;
+    else if (to_unload.size() < 45)
+        unloaded_per_frame = 2;   
+    else
+        unloaded_per_frame = 3;
+    load_chunks();
     create_chunks();
-    unload_3chunks();
+    unload_chunks();
 
     glfwSwapBuffers(window);
     glfwPollEvents(); 
@@ -387,7 +400,7 @@ void Game::save_chunk(glm::ivec2 pos)
     utill::write_file_binary(path, data.data(), data.size() * sizeof(uint8_t));
 }
 
-void Game::load_3chunks()
+void Game::load_chunks()
 {
     if (there_chunks_left_to_load)
     {
@@ -399,7 +412,7 @@ void Game::load_3chunks()
             });
 
         size_t loaded = 0;
-        while (!to_load.empty() && loaded < 3)
+        while (!to_load.empty() && loaded < loaded_per_frame)
         {
             auto pos = to_load.back();
 
@@ -446,12 +459,12 @@ void Game::load_3chunks()
     }
 }
 
-void Game::unload_3chunks()
+void Game::unload_chunks()
 {
     if (there_chunks_left_to_unload)
     {
         size_t unloaded = 0;
-        while (!to_unload.empty() && unloaded < 3)
+        while (!to_unload.empty() && unloaded < unloaded_per_frame)
         {
             std::sort(to_unload.begin(), to_unload.end(),
             [this](const glm::ivec2& a, const glm::ivec2& b) {

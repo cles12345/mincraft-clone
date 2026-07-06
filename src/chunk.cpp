@@ -55,18 +55,26 @@ void Chunk::create_data(int seed)
             float wx = world_pos.x + x;
             float wz = world_pos.z + z;
             
-            float land_variation = base_land_noise.GetNoise(wx, wz) * 15.0f;
+            float continentalness = base_land_noise.GetNoise(wx, wz);
+
+            float land_variation = continentalness * 35.0f;
             float local_sea_level = SEA_LEVEL + land_variation;
 
             float flood_chance = water_cave_noise.GetNoise(wx, wz);
 
+            float mountain_intensity = 12.0f;
+            if (continentalness > 0.0f) 
+            {
+                mountain_intensity += continentalness * 65.0f;
+            }
             int blocks_surface_depth = 0;
 
             for (int y = CHUNK_HEIGHT - 1; y >= 1; y--)
             {
                 float height_pull = local_sea_level - (float)y;
                 float noise3d = terrain_nois_3d.GetNoise(wx, (float)y, wz);
-                float final_density = height_pull + (noise3d * 10.0f);
+
+                float final_density = height_pull + (noise3d * mountain_intensity);
 
                 if (final_density > 0.0f)
                 {

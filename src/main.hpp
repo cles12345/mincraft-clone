@@ -27,10 +27,10 @@
 
 constexpr float PLAYER_SPEED = 20.0f;
 
-constexpr int RENDER_DISTANCE_CHUNKS = 30;
+constexpr int RENDER_DISTANCE_CHUNKS = 32;
 constexpr int RENDER_DISTANCE = RENDER_DISTANCE_CHUNKS * CHUNK_WIDTH;
 
-#define ZPREPASS 1
+#define ZPREPASS 0
 
 namespace utill
 {
@@ -62,6 +62,8 @@ class Game
         bool there_chunks_left_to_unload = true;
         bool there_chunks_left_to_create = true;
         BlockType current_block = GLASS_TYPE;
+        size_t loaded_per_frame = 3;
+        size_t unloaded_per_frame = 3;
 
         Game();
         void game_loop();
@@ -71,8 +73,8 @@ class Game
         void calculate_camera_pos();
         void update();
         void save_chunk(glm::ivec2 pos);
-        void load_3chunks();
-        void unload_3chunks();
+        void load_chunks();
+        void unload_chunks();
         void create_chunks();
         void load_chunk(glm::ivec2 pos);
         void unload_far_chunks();

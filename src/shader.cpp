@@ -2,7 +2,7 @@
 
 Shader::Shader(const std::string& vertex_path, const std::string& fragment_path)
 {
-    vertex_shader =  glCreateShader(GL_VERTEX_SHADER);
+    unsigned int vertex_shader =  glCreateShader(GL_VERTEX_SHADER);
     std::string vertex_code = utill::read_file(vertex_path);    
     const char *vertex_shader_src = vertex_code.c_str();
     glShaderSource(vertex_shader, 1, &vertex_shader_src, NULL);
@@ -19,7 +19,7 @@ Shader::Shader(const std::string& vertex_path, const std::string& fragment_path)
         assert(false);
     }
 
-    fragment_shader =  glCreateShader(GL_FRAGMENT_SHADER);
+    unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     std::string fragment_code = utill::read_file(fragment_path);    
     const char *fragment_shader_src = fragment_code.c_str();
     glShaderSource(fragment_shader, 1, &fragment_shader_src, NULL);
@@ -34,73 +34,73 @@ Shader::Shader(const std::string& vertex_path, const std::string& fragment_path)
         assert(success);
     }
 
-    shader_program = glCreateProgram();
+    id = glCreateProgram();
 
-    glAttachShader(shader_program, vertex_shader);
-    glAttachShader(shader_program, fragment_shader);
-    glLinkProgram(shader_program);
+    glAttachShader(id, vertex_shader);
+    glAttachShader(id, fragment_shader);
+    glLinkProgram(id);
 
-    glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+    glGetProgramiv(id, GL_LINK_STATUS, &success);
 
     if(!success)
     {
-        glGetProgramInfoLog(shader_program, 512, NULL, infoLog);
+        glGetProgramInfoLog(id, 512, NULL, infoLog);
         std::cout << "Error shader program failed to link\n" << infoLog << "\n";
         assert(success);
     }
+
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
 }
 
 void Shader::use() const
 {
-    glUseProgram(shader_program);
+    glUseProgram(id);
 }
 
 void Shader::set_uniform(float value, const char* uniform_name)
 {
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
+    unsigned int uniform_location = glGetUniformLocation(id, uniform_name);
+    glUseProgram(id);
     glUniform1f(uniform_location, value);
 }
 
 void Shader::set_uniform(float value1, float value2, const char* uniform_name)
 {
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
+    unsigned int uniform_location = glGetUniformLocation(id, uniform_name);
+    glUseProgram(id);
     glUniform2f(uniform_location, value1, value2);
 }
 
 void Shader::set_uniform(float value1, float value2, float value3, const char* uniform_name)
 {
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
+    unsigned int uniform_location = glGetUniformLocation(id, uniform_name);
+    glUseProgram(id);
     glUniform3f(uniform_location, value1, value2, value3);
 }
 
 void Shader::set_uniform(float value1, float value2, float value3, float value4, const char* uniform_name)
 {
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
+    unsigned int uniform_location = glGetUniformLocation(id, uniform_name);
+    glUseProgram(id);
     glUniform4f(uniform_location, value1, value2, value3, value4);
 }
 
 void Shader::set_uniform(const glm::mat4& value, const char* uniform_name)
 {
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
+    unsigned int uniform_location = glGetUniformLocation(id, uniform_name);
+    glUseProgram(id);
     glUniformMatrix4fv(uniform_location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
 void Shader::set_uniform(int value, const char* uniform_name)
 {
-    unsigned int uniform_location = glGetUniformLocation(shader_program, uniform_name);
-    glUseProgram(shader_program);
+    unsigned int uniform_location = glGetUniformLocation(id, uniform_name);
+    glUseProgram(id);
     glUniform1i(uniform_location, value);
 }
 
 Shader::~Shader()
 {
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
-    glDeleteProgram(shader_program);
+    glDeleteProgram(id);
 }
-

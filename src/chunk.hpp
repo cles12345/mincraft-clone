@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
-#include <ctime>
 #include <array>
+#include <algorithm>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
 #include "vao.hpp"
@@ -52,10 +52,30 @@ namespace utill
     inline bool should_reveal_face(BlockType current, BlockType neighbor);
     bool is_breakable(BlockType type);
 }
+
+struct ChunkData
+{
+    BlockType data[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_DEPTH] = {NONE};
+
+    inline BlockType get(unsigned int x, unsigned int y, unsigned int z)
+    {
+        return data[(z * CHUNK_WIDTH * CHUNK_HEIGHT) + (y * CHUNK_WIDTH) + x];
+    }
+    inline void set(unsigned int x, unsigned int y, unsigned int z, BlockType type)
+    {
+        data[(z * CHUNK_WIDTH * CHUNK_HEIGHT) + (y * CHUNK_WIDTH) + x] = type;
+    }
+
+    inline void reset()
+    {
+        memset(data, BlockType::NONE, sizeof(data));
+    }
+};
+
 class Chunk
 {
     public:
-        BlockType data[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT] = {NONE};
+        ChunkData data;
         std::vector<Vertex> vertices_opaque;
         std::vector<unsigned int> indices_opaque;
         std::vector<Vertex> vertices_transparent;

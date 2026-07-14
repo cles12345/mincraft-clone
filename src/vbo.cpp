@@ -19,6 +19,12 @@ void VBO::send_buffer(const Vertex vertices[], unsigned int elements)
     glBufferData(GL_ARRAY_BUFFER, elements * sizeof(Vertex), vertices, GL_STATIC_DRAW);
 }
 
+void VBO::send_buffer(const CharVertex vertices[], unsigned int elements)
+{
+    bind();
+    glBufferData(GL_ARRAY_BUFFER, elements * sizeof(CharVertex), vertices, GL_DYNAMIC_DRAW);
+}
+
 void VBO::send_buffer(const float vertices[], size_t size)
 {
     bind();

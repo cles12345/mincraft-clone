@@ -14,9 +14,7 @@
 class Shader
 {
     public:
-        unsigned int vertex_shader;
-        unsigned int fragment_shader;
-        unsigned int shader_program;
+        unsigned int id;
         
         Shader() = default;
         Shader(const std::string& vertex_path, const std::string& fragment_path);

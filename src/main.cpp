@@ -15,7 +15,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, false);
 
-    window = glfwCreateWindow(800, 600, "game", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "mincraft clone", NULL, NULL);
 
     if (window == NULL)
     {
@@ -50,6 +50,9 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
 #endif
     texture = new Texture("sprite/atlas.png", GL_REPEAT, GL_REPEAT, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
     skybox = new Skybox;
+    text = new TextRenderer;
+    text_shader = new Shader("shaders/text.vert", "shaders/text.frag");
+    font = new Texture("sprite/font.png", GL_REPEAT, GL_REPEAT, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST);
     last_frame = glfwGetTime();
 
     cam.pos = glm::vec3(0.0f, 200.0f, 0.0f);
@@ -187,7 +190,7 @@ void Game::check_events()
                 continue;
             }
 
-            if(utill::is_breakable(chunks[chunk_key].data[block_x][block_z][block_y]))
+            if(utill::is_breakable(chunks[chunk_key].data.get(block_x, block_y, block_z)))
             {
                 glm::ivec2 cam_chunk_idx = utill::world_pos_to_chunk_index(cam.pos);
                 glm::vec3 local_cam_pos = utill::world_pos_to_chunk_pos(cam.pos, cam_chunk_idx);
@@ -229,7 +232,7 @@ void Game::check_events()
                     target_y >= 0 && target_y < CHUNK_HEIGHT &&
                     target_z >= 0 && target_z < CHUNK_DEPTH)
                 {
-                    if (!utill::is_breakable(chunks[chunk_key].data[target_x][target_z][target_y]))
+                    if (!utill::is_breakable(chunks[chunk_key].data.get(target_x, target_y, target_z)))
                     {
                         can_break = true;
                     }
@@ -241,7 +244,7 @@ void Game::check_events()
 
                 if (can_break)
                 {
-                    chunks[chunk_key].data[block_x][block_z][block_y] = BlockType::NONE;
+                    chunks[chunk_key].data.set(block_x, block_y, block_z, BlockType::NONE);
                     chunks[chunk_key].dirty = true;
                     
                     if (block_x == 0) 
@@ -314,11 +317,19 @@ void Game::update()
     float light_pos[3] = {cam.pos.x, cam.pos.y, cam.pos.z};
 
     float fps = 1.0f / delta_time;
-    std::string title = "FPS: " + std::to_string(fps);
-    glfwSetWindowTitle(window, title.c_str());
+    std::string fps_s = "FPS: "+std::to_string(fps);
+    text->put(fps_s);
+
+    if (text->dirty)
+    {
+        text->build_mesh();
+    }
+    font->bind();
+    text->render(*text_shader);
 
     skybox->draw(cam);
     
+    texture->bind();
 #if ZPREPASS
     glDepthFunc(GL_LESS);
     glColorMask(0, 0, 0, 0);
@@ -372,9 +383,9 @@ void Game::update()
             }
         }
     }
-    if (to_load.size() < 20)
+    if (to_load.size() < 40)
         loaded_per_frame = 1;
-    else if (to_load.size() < 70)
+    else if (to_load.size() < 100)
         loaded_per_frame = 2;   
     else
         loaded_per_frame = 3;
@@ -463,16 +474,16 @@ void Game::unload_chunks()
 {
     if (there_chunks_left_to_unload)
     {
-        size_t unloaded = 0;
-        while (!to_unload.empty() && unloaded < unloaded_per_frame)
-        {
-            std::sort(to_unload.begin(), to_unload.end(),
+        std::sort(to_unload.begin(), to_unload.end(),
             [this](const glm::ivec2& a, const glm::ivec2& b) {
                 float distA = glm::distance(glm::vec3(a.x, cam.pos.y, a.y), cam.pos);
                 float distB = glm::distance(glm::vec3(b.x, cam.pos.y, b.y), cam.pos);
                 return distA < distB;
             });
 
+        size_t unloaded = 0;
+        while (!to_unload.empty() && unloaded < unloaded_per_frame)
+        {
             auto pos = to_unload.back();
             
             if(chunks.count(pos))
@@ -544,7 +555,7 @@ void Game::load_chunk(glm::ivec2 pos)
         size_t z = (i / CHUNK_HEIGHT) % CHUNK_DEPTH;
         size_t y = i % CHUNK_HEIGHT;
         
-        chunks[pos].data[x][z][y] = static_cast<BlockType>(data[i]);
+        chunks[pos].data.set(x, y, z, static_cast<BlockType>(data[i]));
     }
     
     chunks[pos].created_data = true;
@@ -592,7 +603,7 @@ bool Game::change_block(int i, BlockType type)
         return false;
     }
 
-    chunks[chunk_key].data[(int)local_pos.x][(int)local_pos.z][(int)local_pos.y] = type;
+    chunks[chunk_key].data.set(local_pos.x, local_pos.y, local_pos.z, type);
     chunks[chunk_key].dirty = true;
     if ((int)local_pos.x == 0) 
     {
@@ -630,7 +641,7 @@ Game::~Game()
 
 namespace utill
 {
-    std::vector<uint8_t> world_data_to_uint8(BlockType (&data)[CHUNK_WIDTH][CHUNK_DEPTH][CHUNK_HEIGHT])
+    std::vector<uint8_t> world_data_to_uint8(ChunkData& data)
     {
         std::vector<uint8_t> vector;
         vector.reserve(CHUNK_WIDTH * CHUNK_DEPTH * CHUNK_HEIGHT);
@@ -641,7 +652,7 @@ namespace utill
             {
                 for(size_t y = 0; y < CHUNK_HEIGHT; y++)
                 {
-                    vector.push_back(static_cast<uint8_t>(data[x][z][y]));
+                    vector.push_back(static_cast<uint8_t>(data.get(x, y, z)));
                 }
             }
         }

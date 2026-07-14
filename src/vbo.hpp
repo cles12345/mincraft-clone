@@ -9,6 +9,13 @@ struct Vertex
     float u, v;
 };
 
+struct CharVertex
+{
+    float x,y;
+    float r, g, b;
+    float u, v;
+};
+
 class VBO
 {
     public:
@@ -17,6 +24,7 @@ class VBO
         VBO(const float vertices[], size_t vertex_size);
         VBO();
         void send_buffer(const Vertex vertices[], unsigned int elements);
+        void send_buffer(const CharVertex vertices[], unsigned int elements);
         void send_buffer(const float vertices[], size_t size);
         void bind();
         ~VBO();

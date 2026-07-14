@@ -9,8 +9,7 @@ Chunk::Chunk(const glm::vec3& pos)
 
 void Chunk::create_data(int seed)
 {
-    dirty = true;
-    memset(data, 0, sizeof(data));
+	data.reset();
 
     static FastNoiseLite terrain_nois_3d;
     static FastNoiseLite base_land_noise;
@@ -40,7 +39,6 @@ void Chunk::create_data(int seed)
 
         spaghetti_cave_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
         spaghetti_cave_noise.SetFrequency(0.03f);
-        spaghetti_cave_noise.SetFractalOctaves(1);
         spaghetti_cave_noise.SetSeed(seed + 2000);
 
         water_cave_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
@@ -69,7 +67,9 @@ void Chunk::create_data(int seed)
             }
             int blocks_surface_depth = 0;
 
-            for (int y = CHUNK_HEIGHT - 1; y >= 1; y--)
+            int start_y = (int)std::max((float)SEA_LEVEL, local_sea_level + mountain_intensity);
+
+            for (int y = start_y; y >= 1; y--)
             {
                 float height_pull = local_sea_level - (float)y;
                 float noise3d = terrain_nois_3d.GetNoise(wx, (float)y, wz);
@@ -98,9 +98,9 @@ void Chunk::create_data(int seed)
                         blocks_surface_depth = 0;
 
                         if (y <= SEA_LEVEL - 8 && flood_chance > 0.4f)
-                            data[x][z][y] = BlockType::WATER_TYPE;
+							data.set(x, y, z, BlockType::WATER_TYPE);
                         else
-                            data[x][z][y] = BlockType::NONE;
+							data.set(x, y, z, BlockType::NONE);
                     }
                     else 
                     {
@@ -109,23 +109,23 @@ void Chunk::create_data(int seed)
                         if (blocks_surface_depth == 0)
                         {
                             if (is_beach_zone)
-                                data[x][z][y] = BlockType::SAND_TYPE;
+								data.set(x, y, z, BlockType::SAND_TYPE);
                             else if (y > SEA_LEVEL)
-                                data[x][z][y] = BlockType::GRASS_TYPE;
+								data.set(x, y, z, BlockType::GRASS_TYPE);
                             else
-                                data[x][z][y] = BlockType::STONE_TYPE;
+								data.set(x, y, z, BlockType::STONE_TYPE);
                         }
                         else if (blocks_surface_depth < DIRT_LEVEL)
                         {
                             if (is_beach_zone)
-                                data[x][z][y] = BlockType::SAND_TYPE;
+								data.set(x, y, z, BlockType::SAND_TYPE);
                             else if (y > SEA_LEVEL)
-                                data[x][z][y] = BlockType::DIRT_TYPE;
+								data.set(x, y, z, BlockType::DIRT_TYPE);
                             else
-                                data[x][z][y] = BlockType::STONE_TYPE;
+								data.set(x, y, z, BlockType::STONE_TYPE);
                         }
                         else
-                            data[x][z][y] = BlockType::STONE_TYPE;
+							data.set(x, y, z, BlockType::STONE_TYPE);
 
                         blocks_surface_depth++;
                     }
@@ -134,15 +134,16 @@ void Chunk::create_data(int seed)
                 {
                     blocks_surface_depth = 0;
                     if (y <= SEA_LEVEL)
-                        data[x][z][y] = BlockType::WATER_TYPE;
+						data.set(x, y, z, BlockType::WATER_TYPE);
                     else
-                        data[x][z][y] = BlockType::NONE;
+						data.set(x, y, z, BlockType::NONE);
                 }
             }
 
-            data[x][z][0] = BlockType::BEDROCK_TYPE;
+			data.set(x, 0, z, BlockType::BEDROCK_TYPE);
         }
     }
+	dirty = true;
     created_data = true;
 }
 
@@ -170,27 +171,27 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
         {
             for (size_t y = 0; y < CHUNK_HEIGHT; y++)
             {
-                BlockType current = data[x][z][y];
+                BlockType current = data.get(x, y, z);
                 if (current == NONE) continue;                
                 glm::vec3 pos(x, y, z);
 
                 if (x + 1 >= CHUNK_WIDTH) 
                 {
-                    BlockType neighbor = (right != nullptr) ? right->data[0][z][y] : BlockType::NONE;
+                    BlockType neighbor = (right != nullptr) ? right->data.get(0, y, z) : BlockType::NONE;
                     if (utill::should_reveal_face(current, neighbor)) add_face(RIGHT, pos);
                 } 
                 else 
                 {
-                    if (utill::should_reveal_face(current, data[x + 1][z][y])) add_face(RIGHT, pos);
+                    if (utill::should_reveal_face(current, data.get(x + 1, y, z))) add_face(RIGHT, pos);
                 }
                 if (x == 0)
                 {
-                    BlockType neighbor = (left != nullptr) ? left->data[CHUNK_WIDTH - 1][z][y] : BlockType::NONE;
+                    BlockType neighbor = (left != nullptr) ? left->data.get(CHUNK_WIDTH - 1, y, z) : BlockType::NONE;
                     if (utill::should_reveal_face(current, neighbor)) add_face(LEFT, pos);
                 }
                 else 
                 {
-                    if (utill::should_reveal_face(current, data[x - 1][z][y])) add_face(LEFT, pos);
+                    if (utill::should_reveal_face(current, data.get(x - 1, y, z))) add_face(LEFT, pos);
                 }
 
                 if (y + 1 >= CHUNK_HEIGHT) 
@@ -199,7 +200,7 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
                 } 
                 else 
                 {
-                    if (utill::should_reveal_face(current, data[x][z][y + 1])) add_face(TOP, pos);
+                    if (utill::should_reveal_face(current, data.get(x, y + 1, z))) add_face(TOP, pos);
                 }
 
                 if (y == 0) 
@@ -208,27 +209,27 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
                 } 
                 else
                 {
-                    if (utill::should_reveal_face(current, data[x][z][y - 1])) add_face(BOTTOM, pos);
+                    if (utill::should_reveal_face(current, data.get(x, y - 1, z))) add_face(BOTTOM, pos);
                 }
 
                 if (z + 1 >= CHUNK_DEPTH) 
                 {
-                    BlockType neighbor = (front != nullptr) ? front->data[x][0][y] : BlockType::NONE;
+                    BlockType neighbor = (front != nullptr) ? front->data.get(x, y, 0) : BlockType::NONE;
                     if (utill::should_reveal_face(current, neighbor)) add_face(FRONT, pos);
                 } 
                 else 
                 {
-                    if (utill::should_reveal_face(current, data[x][z + 1][y])) add_face(FRONT, pos);
+                    if (utill::should_reveal_face(current, data.get(x, y, z + 1))) add_face(FRONT, pos);
                 }
 
                 if (z == 0) 
                 {
-                    BlockType neighbor = (back != nullptr) ? back->data[x][CHUNK_DEPTH - 1][y] : BlockType::NONE;
+                    BlockType neighbor = (back != nullptr) ? back->data.get(x, y, CHUNK_DEPTH - 1) : BlockType::NONE;
                     if (utill::should_reveal_face(current, neighbor)) add_face(BACK, pos);
                 }
                 else 
                 {
-                    if (utill::should_reveal_face(current, data[x][z - 1][y])) add_face(BACK, pos);
+                    if (utill::should_reveal_face(current, data.get(x, y, z - 1))) add_face(BACK, pos);
                 }
             }
         }
@@ -262,14 +263,14 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 void Chunk::add_face(Face face, glm::vec3 pos)
 {
     float norm[3] = {0};
-    auto uv = get_tile(face, data[(int)pos.x][(int)pos.z][(int)pos.y]);
+    auto uv = get_tile(face, data.get((int)pos.x, (int)pos.y, (int)pos.z));
     float u0 = uv[0];
     float v0 = uv[1];
     float u1 = u0 + (1.0f / ATLAS_COLS);
     float v1 = v0 + (1.0f / ATLAS_ROWS);
 
-    std::vector<Vertex>& vertices = utill::is_transparent(data[(int)pos.x][(int)pos.z][(int)pos.y]) ? vertices_transparent : vertices_opaque;
-    std::vector<unsigned int>& indices = utill::is_transparent(data[(int)pos.x][(int)pos.z][(int)pos.y]) ? indices_transparent : indices_opaque;
+    std::vector<Vertex>& vertices = utill::is_transparent(data.get((int)pos.x, (int)pos.y, (int)pos.z)) ? vertices_transparent : vertices_opaque;
+    std::vector<unsigned int>& indices = utill::is_transparent(data.get((int)pos.x, (int)pos.y, (int)pos.z)) ? indices_transparent : indices_opaque;
 
     switch (face)
     {
@@ -401,6 +402,7 @@ void Chunk::draw_opaque(Shader& shader)
     glm::mat4 model = glm::translate(glm::mat4(1.0f), world_pos);
     shader.set_uniform(model, "model");
     glDrawElements(GL_TRIANGLES, ebo_opaque.indices_count, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
 void Chunk::draw_transparent(Shader& shader)
@@ -415,6 +417,7 @@ void Chunk::draw_transparent(Shader& shader)
     glDrawElements(GL_TRIANGLES, ebo_transparent.indices_count, GL_UNSIGNED_INT, 0);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
+    glBindVertexArray(0);
 }
 
 namespace utill

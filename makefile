@@ -1,16 +1,16 @@
 CXX = g++
 CXXFLAGS = -Wall -Werror -O3 -ffast-math -g $(INCDIR)
-SRC = main.cpp shader.cpp utill.cpp texture.cpp camera.cpp chunk.cpp vao.cpp vbo.cpp ebo.cpp skybox.cpp frustum.cpp
+SRC = main.cpp shader.cpp utill.cpp texture.cpp camera.cpp chunk.cpp vao.cpp vbo.cpp ebo.cpp skybox.cpp frustum.cpp text.cpp
 OBJ = $(SRC:.cpp=.o)
 SRCDIR = src
 BUILDDIR = build
 LIBDIR = libs
-INCDIR = -Iinc/GLFW -Iinc/glad -Iinc/stb -Iinc/glm -Iinc/FastNoiseLite/
+INCDIR = -Iinc/GLFW -Iinc/glad -Iinc/stb -Iinc/glm -Iinc/FastNoiseLite/ -Iinc/profiler/
 LDLIBS = -L$(LIBDIR)/glfw/ -lglfw3 -lopengl32 -lgdi32 -static
 
 all: $(BUILDDIR)/game
 
-$(BUILDDIR)/game: $(addprefix $(BUILDDIR)/, $(OBJ)) $(LIBDIR)/glad/glad.o
+$(BUILDDIR)/game: $(addprefix $(BUILDDIR)/, $(OBJ)) $(LIBDIR)/glad/glad.o $(LIBDIR)/profiler/profiler.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDLIBS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp

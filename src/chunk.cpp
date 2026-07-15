@@ -160,10 +160,14 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
     indices_transparent.clear();
     vao_opaque.count = 0;
     vao_transparent.count = 0;
-    Chunk* right = (chunks.count(pos_r) && chunks[pos_r].created_data) ? &chunks[pos_r] : nullptr;
-    Chunk* left  = (chunks.count(pos_l) && chunks[pos_l].created_data) ? &chunks[pos_l] : nullptr;
-    Chunk* front = (chunks.count(pos_f) && chunks[pos_f].created_data) ? &chunks[pos_f] : nullptr;
-    Chunk* back  = (chunks.count(pos_b) && chunks[pos_b].created_data) ? &chunks[pos_b] : nullptr;
+    auto it_r = chunks.find(pos_r);
+    auto it_l = chunks.find(pos_l);
+    auto it_f = chunks.find(pos_f);
+    auto it_b = chunks.find(pos_b);
+    Chunk* right = (it_r != chunks.end() && it_r->second.created_data) ? &it_r->second : nullptr;
+    Chunk* left  = (it_l != chunks.end() && it_l->second.created_data) ? &it_l->second : nullptr;
+    Chunk* front = (it_f != chunks.end() && it_f->second.created_data) ? &it_f->second : nullptr;
+    Chunk* back  = (it_b != chunks.end() && it_b->second.created_data) ? &it_b->second : nullptr;
 
     for (size_t x = 0; x < CHUNK_WIDTH; x++)
     {
@@ -238,18 +242,16 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
     vao_opaque.bind();
     vbo_opaque.bind();
     ebo_opaque.bind();
-    vao_opaque.set_layout(0, 3, FLOAT);
-    vao_opaque.set_layout(1, 3, FLOAT);
-    vao_opaque.set_layout(2, 2, FLOAT);
+    vao_opaque.set_layout(0, 1, UNSIGND_INT);
+    vao_opaque.set_layout(1, 2, FLOAT);
     vbo_opaque.send_buffer(vertices_opaque.data(), vertices_opaque.size());
     ebo_opaque.send_buffer(indices_opaque.data(), indices_opaque.size() * sizeof(unsigned int));
 
     vao_transparent.bind();
     vbo_transparent.bind();
     ebo_transparent.bind();
-    vao_transparent.set_layout(0, 3, FLOAT);
-    vao_transparent.set_layout(1, 3, FLOAT);
-    vao_transparent.set_layout(2, 2, FLOAT);
+    vao_transparent.set_layout(0, 1, UNSIGND_INT);
+    vao_transparent.set_layout(1, 2, FLOAT);
     vbo_transparent.send_buffer(vertices_transparent.data(), vertices_transparent.size());
     ebo_transparent.send_buffer(indices_transparent.data(), indices_transparent.size() * sizeof(unsigned int));
 
@@ -262,7 +264,7 @@ void Chunk::build_mesh(std::unordered_map<glm::ivec2, Chunk>& chunks)
 
 void Chunk::add_face(Face face, glm::vec3 pos)
 {
-    float norm[3] = {0};
+    uint8_t norm = 0;
     auto uv = get_tile(face, data.get((int)pos.x, (int)pos.y, (int)pos.z));
     float u0 = uv[0];
     float v0 = uv[1];
@@ -272,76 +274,67 @@ void Chunk::add_face(Face face, glm::vec3 pos)
     std::vector<Vertex>& vertices = utill::is_transparent(data.get((int)pos.x, (int)pos.y, (int)pos.z)) ? vertices_transparent : vertices_opaque;
     std::vector<unsigned int>& indices = utill::is_transparent(data.get((int)pos.x, (int)pos.y, (int)pos.z)) ? indices_transparent : indices_opaque;
 
+    uint8_t x = static_cast<uint8_t>(pos.x);
+    uint8_t y = static_cast<uint8_t>(pos.y);
+    uint8_t z = static_cast<uint8_t>(pos.z);
+    uint8_t x1 = x + 1;
+    uint8_t y1 = y + 1;
+    uint8_t z1 = z + 1;
+    
     switch (face)
     {
         case TOP:
-            pos.y += 1.0f;
-            norm[0] = 0.0f;
-            norm[1] = 1.0f;
-            norm[2] = 0.0f;
-            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({pos.x+1.0f, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({pos.x+1.0f, pos.y, pos.z+1.0f, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({pos.x, pos.y, pos.z+1.0f, norm[0], norm[1], norm[2], u0, v1});
+            norm = (0 << 4) | (1 << 2) | (0 << 0);
+            vertices.emplace_back(x, y1, z, norm, u0, v1);
+            vertices.emplace_back(x1, y1, z, norm, u1, v1);
+            vertices.emplace_back(x1, y1, z1, norm, u1, v0);
+            vertices.emplace_back(x, y1, z1, norm, u0, v0);
             break;  
         case BOTTOM:
-            norm[0] = 0.0f;
-            norm[1] = -1.0f;
-            norm[2] = 0.0f;
-            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({pos.x+1, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({pos.x+1, pos.y, pos.z+1, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({pos.x, pos.y, pos.z+1, norm[0], norm[1], norm[2], u0, v1});
+            norm = (0 << 4) | (2 << 2) | (0 << 0);
+            vertices.emplace_back(x, y, z, norm, u0, v0);
+            vertices.emplace_back(x1, y, z, norm, u1, v0);
+            vertices.emplace_back(x1, y, z1, norm, u1, v1);
+            vertices.emplace_back(x, y, z1, norm, u0, v1);
             break;  
         case RIGHT:
-            pos.x += 1.0f;
-            norm[0] = 1.0f;
-            norm[1] = 0.0f;
-            norm[2] = 0.0f;
-            vertices.push_back({pos.x, pos.y,   pos.z,   norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({pos.x, pos.y+1, pos.z,   norm[0], norm[1], norm[2], u0, v1});
-            vertices.push_back({pos.x, pos.y+1, pos.z+1, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({pos.x, pos.y,   pos.z+1, norm[0], norm[1], norm[2], u1, v0});
+            norm = (1 << 4) | (0 << 2) | (0 << 0);
+            vertices.emplace_back(x1, y, z, norm, u0, v0);
+            vertices.emplace_back(x1, y1, z, norm, u0, v1);
+            vertices.emplace_back(x1, y1, z1, norm, u1, v1);
+            vertices.emplace_back(x1, y, z1, norm, u1, v0);
             break;  
         case LEFT:
-            norm[0] = -1.0f;
-            norm[1] = 0.0f;
-            norm[2] = 0.0f;
-            vertices.push_back({pos.x, pos.y,   pos.z,   norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({pos.x, pos.y+1, pos.z,   norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({pos.x, pos.y+1, pos.z+1, norm[0], norm[1], norm[2], u0, v1});
-            vertices.push_back({pos.x, pos.y,   pos.z+1, norm[0], norm[1], norm[2], u0, v0});
+            norm = (2 << 4) | (0 << 2) | (0 << 0);
+            vertices.emplace_back(x, y, z, norm, u1, v0);
+            vertices.emplace_back(x, y1, z, norm, u1, v1);
+            vertices.emplace_back(x, y1, z1, norm, u0, v1);
+            vertices.emplace_back(x, y, z1, norm, u0, v0);
             break;
         case FRONT:
-            pos.z += 1.0f;
-            norm[0] = 0.0f;
-            norm[1] = 0.0f;
-            norm[2] = 1.0f;
-            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({pos.x+1.0f, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({pos.x+1.0f, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({pos.x, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u0, v1});
+            norm = (0 << 4) | (0 << 2) | (1 << 0);
+            vertices.emplace_back(x, y, z1, norm, u0, v0);
+            vertices.emplace_back(x1, y, z1, norm, u1, v0);
+            vertices.emplace_back(x1, y1, z1, norm, u1, v1);
+            vertices.emplace_back(x, y1, z1, norm, u0, v1);
             break;  
         case BACK:
-            norm[0] = 0.0f;
-            norm[1] = 0.0f;
-            norm[2] = -1.0f;
-            vertices.push_back({pos.x+1.0f, pos.y, pos.z, norm[0], norm[1], norm[2], u0, v0});
-            vertices.push_back({pos.x, pos.y, pos.z, norm[0], norm[1], norm[2], u1, v0});
-            vertices.push_back({pos.x, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u1, v1});
-            vertices.push_back({pos.x+1.0f, pos.y+1.0f, pos.z, norm[0], norm[1], norm[2], u0, v1});
+            norm = (0 << 4) | (0 << 2) | (2 << 0);
+            vertices.emplace_back(x1, y, z, norm, u0, v0);
+            vertices.emplace_back(x, y, z, norm, u1, v0);
+            vertices.emplace_back(x, y1, z, norm, u1, v1);
+            vertices.emplace_back(x1, y1, z, norm, u0, v1);
             break;  
-
-        default: assert(false && "unknow face to add");
+        default: assert(false && "unknown face to add");
     }
 
     unsigned int offset = vertices.size() - 4;
-    indices.push_back(offset + 0);
-    indices.push_back(offset + 1);
-    indices.push_back(offset + 2);
-    indices.push_back(offset + 0);
-    indices.push_back(offset + 2);
-    indices.push_back(offset + 3);
+    indices.emplace_back(offset + 0);
+    indices.emplace_back(offset + 1);
+    indices.emplace_back(offset + 2);
+    indices.emplace_back(offset + 0);
+    indices.emplace_back(offset + 2);
+    indices.emplace_back(offset + 3);
 }
 
 std::array<float, 2> Chunk::get_tile(Face face, BlockType type)

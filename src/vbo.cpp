@@ -13,6 +13,22 @@ VBO::VBO()
     glBindBuffer(GL_ARRAY_BUFFER, id);
 }
 
+VBO::VBO(VBO&& other) noexcept : id(other.id)
+{
+    other.id = 0;
+}
+
+VBO& VBO::operator=(VBO&& other) noexcept
+{
+    if (this != &other)
+    {
+        glDeleteBuffers(1, &id);
+        id = other.id;
+        other.id = 0;
+    }
+    return *this;
+}
+
 void VBO::send_buffer(const Vertex vertices[], unsigned int elements)
 {
     bind();

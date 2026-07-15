@@ -4,10 +4,14 @@ void TextRenderer::render(Shader& shader)
 {
     if (vertices.empty()) return;
     vao.bind();
-    glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, -1.0f, 1.0f);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    glDisable(GL_DEPTH_TEST);
     shader.set_uniform(projection, "projection");
     glDrawElements(GL_TRIANGLES, ebo.indices_count, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 }
 
 void TextRenderer::build_mesh()
@@ -26,18 +30,18 @@ void TextRenderer::build_mesh()
 
         float x = c.x * CHAR_WIDTH;
         float y = c.y * CHAR_HEIGHT;
-        vertices.push_back({x, y, c.r, c.g, c.b, u0, v0});
-        vertices.push_back({x + CHAR_WIDTH, y, c.r, c.g, c.b, u1, v0});
-        vertices.push_back({x + CHAR_WIDTH, y + CHAR_HEIGHT, c.r, c.g, c.b, u1, v1});
-        vertices.push_back({x, y + CHAR_HEIGHT, c.r, c.g, c.b, u0, v1});
+        vertices.emplace_back(x, y, c.r, c.g, c.b, u0, v0);
+        vertices.emplace_back(x + CHAR_WIDTH, y, c.r, c.g, c.b, u1, v0);
+        vertices.emplace_back(x + CHAR_WIDTH, y + CHAR_HEIGHT, c.r, c.g, c.b, u1, v1);
+        vertices.emplace_back(x, y + CHAR_HEIGHT, c.r, c.g, c.b, u0, v1);
 
         unsigned int offset = vertices.size() - 4;
-        indices.push_back(offset + 0);
-        indices.push_back(offset + 1);
-        indices.push_back(offset + 2);
-        indices.push_back(offset + 0);
-        indices.push_back(offset + 2);
-        indices.push_back(offset + 3);
+        indices.emplace_back(offset + 0);
+        indices.emplace_back(offset + 1);
+        indices.emplace_back(offset + 2);
+        indices.emplace_back(offset + 0);
+        indices.emplace_back(offset + 2);
+        indices.emplace_back(offset + 3);
     }
     
     vao.bind();

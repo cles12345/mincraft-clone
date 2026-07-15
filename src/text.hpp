@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <glm.hpp>
+#include <array>
 #include "vao.hpp"
 #include "vbo.hpp"
 #include "ebo.hpp"
@@ -27,6 +28,7 @@ class TextRenderer
         EBO ebo;
         Shader shader;
         bool dirty;
+        glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, -1.0f, 1.0f);
 
         void render(Shader& shader);
         void build_mesh();

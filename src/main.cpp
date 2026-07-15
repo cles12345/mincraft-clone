@@ -68,7 +68,7 @@ Game::Game() : cam(45.0f, 800.0f, 600.0f)
             glm::ivec2 pos(x * CHUNK_WIDTH, z * CHUNK_DEPTH);
             if (!chunks.count(pos))
             {
-                chunks.try_emplace(pos, glm::vec3(pos.x, 0, pos.y));
+                to_load.emplace_back(pos);
             }
         }
     }
@@ -144,6 +144,7 @@ void Game::check_events()
         if (current_chunk != last_chunk)
         {
             last_chunk = current_chunk;
+            to_unload.clear();
             unload_far_chunks();
 
             int radius = RENDER_DISTANCE_CHUNKS / 2;
@@ -152,9 +153,9 @@ void Game::check_events()
                 for (int z = current_chunk.y - radius; z <= current_chunk.y + radius; z++)
                 {
                     glm::ivec2 pos(x * CHUNK_WIDTH, z * CHUNK_DEPTH);
-                    if (!chunks.count(pos))
+                    if (std::find(to_load.begin(), to_load.end(), pos) == to_load.end())
                     {
-                        chunks.try_emplace(pos, glm::vec3(pos.x, 0, pos.y));
+                        to_load.emplace_back(pos);
                     }
                 }
             }
@@ -316,17 +317,6 @@ void Game::update()
     float light_color[3] = {1.0f, 1.0f, 1.0f};
     float light_pos[3] = {cam.pos.x, cam.pos.y, cam.pos.z};
 
-    float fps = 1.0f / delta_time;
-    std::string fps_s = "FPS: "+std::to_string(fps);
-    text->put(fps_s);
-
-    if (text->dirty)
-    {
-        text->build_mesh();
-    }
-    font->bind();
-    text->render(*text_shader);
-
     skybox->draw(cam);
     
     texture->bind();
@@ -355,12 +345,6 @@ void Game::update()
     shader->set_uniform(cam.pos[0], cam.pos[1], cam.pos[2], "viewPos");
     for (auto& [pos, chunk] : chunks)
     {
-        if (!chunk.created_data && !chunk.added_to_load)
-        {
-            to_load.push_back(pos);
-            chunk.added_to_load = true;
-        }
-
         if (chunk.created_data)
         {
             AABB box = {{chunk.world_pos}, {chunk.world_pos.x + CHUNK_WIDTH, chunk.world_pos.y + CHUNK_HEIGHT, chunk.world_pos.z + CHUNK_DEPTH}};
@@ -383,19 +367,24 @@ void Game::update()
             }
         }
     }
+
+    float fps = 1.0f / delta_time;
+    std::string fps_s = "FPS: "+std::to_string(fps);
+    text->put(fps_s);
+
+    if (text->dirty)
+    {
+        text->build_mesh();
+    }
+    font->bind();
+    text->render(*text_shader);
+
     if (to_load.size() < 40)
         loaded_per_frame = 1;
     else if (to_load.size() < 100)
         loaded_per_frame = 2;   
     else
         loaded_per_frame = 3;
-        
-    if (to_unload.size() < 20)
-        unloaded_per_frame = 1;
-    else if (to_unload.size() < 45)
-        unloaded_per_frame = 2;   
-    else
-        unloaded_per_frame = 3;
     load_chunks();
     create_chunks();
     unload_chunks();
@@ -474,19 +463,13 @@ void Game::unload_chunks()
 {
     if (there_chunks_left_to_unload)
     {
-        std::sort(to_unload.begin(), to_unload.end(),
-            [this](const glm::ivec2& a, const glm::ivec2& b) {
-                float distA = glm::distance(glm::vec3(a.x, cam.pos.y, a.y), cam.pos);
-                float distB = glm::distance(glm::vec3(b.x, cam.pos.y, b.y), cam.pos);
-                return distA < distB;
-            });
-
         size_t unloaded = 0;
         while (!to_unload.empty() && unloaded < unloaded_per_frame)
         {
             auto pos = to_unload.back();
-            
-            if(chunks.count(pos))
+            to_unload.pop_back();
+
+            if (chunks.count(pos))
             {
                 std::string path = "save/" + std::to_string(pos.x) + "," + std::to_string(pos.y) + ".chunk";
                 if (!utill::file_exist(path))
@@ -496,8 +479,6 @@ void Game::unload_chunks()
                 chunks.erase(pos);
                 unloaded++;
             }
-
-            to_unload.pop_back();   
         }
 
         if (unloaded == 0)
@@ -516,7 +497,7 @@ void Game::create_chunks()
         {
             if (chunk.created_data && chunk.dirty)
             {
-                dirty_chunks.push_back(pos);
+                dirty_chunks.emplace_back(pos);
             }
         }
 
@@ -576,7 +557,7 @@ void Game::unload_far_chunks()
         };
         if (glm::distance(play_pos, chunk_pos) > (RENDER_DISTANCE + 1) && !chunk.added_to_unload)
         {
-            to_unload.push_back(pos);
+            to_unload.emplace_back(pos);
             chunk.added_to_unload = true;
         }
     }
@@ -652,7 +633,7 @@ namespace utill
             {
                 for(size_t y = 0; y < CHUNK_HEIGHT; y++)
                 {
-                    vector.push_back(static_cast<uint8_t>(data.get(x, y, z)));
+                    vector.emplace_back(static_cast<uint8_t>(data.get(x, y, z)));
                 }
             }
         }

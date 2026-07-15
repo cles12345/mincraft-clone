@@ -3,10 +3,26 @@
 VAO::VAO(unsigned int stride)
 {
     this->stride = stride;
-    
     glGenVertexArrays(1, &id);
-    glBindVertexArray(id);
-    glBindVertexArray(0);
+}
+
+VAO::VAO(VAO&& other) noexcept 
+    : id(other.id), count(other.count), stride(other.stride)
+{
+    other.id = 0;
+}
+
+VAO& VAO::operator=(VAO&& other) noexcept
+{
+    if (this != &other)
+    {
+        glDeleteVertexArrays(1, &id);
+        id = other.id;
+        count = other.count;
+        stride = other.stride;
+        other.id = 0;
+    }
+    return *this;
 }
 
 void VAO::bind()
@@ -16,24 +32,26 @@ void VAO::bind()
 
 void VAO::set_layout(unsigned int location, int elements, VERTEX_TYPE type)
 {
-    glBindVertexArray(id);
+    unsigned int element_size = 0;
     switch (type)
     {
         case FLOAT:
-            glVertexAttribPointer(location, elements, GL_FLOAT, GL_FALSE, stride, (void*)(count * sizeof(float)));
+            element_size = sizeof(float);
+            glVertexAttribPointer(location, elements, GL_FLOAT, GL_FALSE, stride, (void*)(uintptr_t)count);
             glEnableVertexAttribArray(location); 
             break;
         case UNSIGND_INT:
-            glVertexAttribPointer(location, elements, GL_UNSIGNED_INT, GL_FALSE, stride, (void*)(count * sizeof(unsigned int)));
+            element_size = sizeof(unsigned int);
+            glVertexAttribIPointer(location, elements, GL_UNSIGNED_INT, stride, (void*)(uintptr_t)count);
             glEnableVertexAttribArray(location); 
             break;
         case INT:
-            glVertexAttribPointer(location, elements, GL_INT, GL_FALSE, stride, (void*)(count * sizeof(int)));
+            element_size = sizeof(int);
+            glVertexAttribIPointer(location, elements, GL_INT, stride, (void*)(uintptr_t)count);
             glEnableVertexAttribArray(location); 
             break;
     }
-    count += elements;
-    glBindVertexArray(0);  
+    count += elements * element_size;
 }
 
 VAO::~VAO()

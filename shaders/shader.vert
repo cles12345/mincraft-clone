@@ -1,17 +1,23 @@
 #version 460 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTexCord;
+layout (location = 0) in uint aPackedData;
+layout (location = 1) in vec2 aTexCord;
 out vec2 texCord;
-flat out vec3 Normal;
+out vec3 Normal;
 out vec3 fragPos;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 void main()
 {
-    gl_Position =  projection * view * model * vec4(aPos.x, aPos.y, aPos.z, 1.0);
-    fragPos = vec3(model * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(model))) * aNormal;
+    uint x = aPackedData & 0xFFu;
+    uint y = (aPackedData >> 8) & 0xFFu;
+    uint z = (aPackedData >> 16) & 0xFFu;
+    uint norm = (aPackedData >> 24) & 0xFFu;
+    vec3 position = vec3(x, y, z);
+    vec4 worldPos = model * vec4(position, 1.0);
+    gl_Position =  projection * view * worldPos;
+    fragPos = worldPos.xyz;
+    vec3 normal = (vec3(norm) / 127.5) - 1.0;
+    Normal = normalize(mat3(transpose(inverse(model))) * normal);
     texCord = aTexCord;
 }
